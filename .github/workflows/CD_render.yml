@@ -1,0 +1,38 @@
+name: Deploy to Render
+
+on:
+  push:
+    branches: [ trunk ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: render-deploy-${{ github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy to Render (trunk)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v4
+
+      - name: Set Render deploy hook (trunk)
+        run: |
+          if [ -z "${{ secrets.RENDER_DEPLOY_HOOK_URL_TRUNK }}" ]; then
+            echo "Falta el secreto RENDER_DEPLOY_HOOK_URL_TRUNK"; exit 1
+          fi
+          echo "DEPLOY_HOOK_URL=${{ secrets.RENDER_DEPLOY_HOOK_URL_TRUNK }}" >> $GITHUB_ENV
+          echo "Target: Render (trunk)"
+
+      - name: Trigger Render deploy
+        run: |
+          if [ -z "${DEPLOY_HOOK_URL:-}" ]; then
+            echo "Falta DEPLOY_HOOK_URL"; exit 1
+          fi
+          # Render recomienda POST al deploy hook
+          curl -fsS -X POST "$DEPLOY_HOOK_URL"
