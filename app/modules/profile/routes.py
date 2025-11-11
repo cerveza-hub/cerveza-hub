@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import base64
 import io
 
@@ -9,6 +10,12 @@ from flask_login import current_user, login_required
 
 from app import db
 from app.modules.auth.models import User
+=======
+from flask import redirect, render_template, request, url_for
+from flask_login import current_user, login_required
+
+from app import db
+>>>>>>> origin/trunk
 from app.modules.auth.services import AuthenticationService
 from app.modules.dataset.models import DataSet
 from app.modules.profile import profile_bp
@@ -20,7 +27,11 @@ from app.modules.profile.services import UserProfileService
 @login_required
 def edit_profile():
     auth_service = AuthenticationService()
+<<<<<<< HEAD
     profile = auth_service.get_authenticated_user_profile()
+=======
+    profile = auth_service.get_authenticated_user_profile
+>>>>>>> origin/trunk
     if not profile:
         return redirect(url_for("public.index"))
 
@@ -35,6 +46,27 @@ def edit_profile():
     return render_template("profile/edit.html", form=form)
 
 
+<<<<<<< HEAD
+=======
+@profile_bp.route("/profile/manage_account", methods=["GET", "POST"])
+@login_required
+def manage_account():
+    auth_service = AuthenticationService()
+    profile = auth_service.get_authenticated_user_profile
+    if not profile:
+        return redirect(url_for("public.index"))
+
+    form = UserProfileForm()
+    
+    if request.method == "POST":
+        service = UserProfileService()
+        result, errors = service.update_profile(profile.id, form)
+        return service.handle_service_response(
+            result, errors, "profile.edit_profile", "Profile updated successfully", "profile/edit.html", form
+        )
+    return render_template("profile/manage_account.html", form=form)
+
+>>>>>>> origin/trunk
 @profile_bp.route("/profile/summary")
 @login_required
 def my_profile():
@@ -60,6 +92,7 @@ def my_profile():
         pagination=user_datasets_pagination,
         total_datasets=total_datasets_count,
     )
+<<<<<<< HEAD
 
 
 # Ruta para habilitar el 2FA
@@ -152,3 +185,5 @@ def public_profile(user_id):
         pagination=user_datasets_pagination,
         total_datasets=total_datasets_count,
     )
+=======
+>>>>>>> origin/trunk

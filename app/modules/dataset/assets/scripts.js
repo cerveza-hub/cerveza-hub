@@ -236,4 +236,9 @@ var currentId = 0;
         function isValidOrcid(orcid) {
             let orcidRegex = /^\d{4}-\d{4}-\d{4}-\d{4}$/;
             return orcidRegex.test(orcid);
+<<<<<<< HEAD
         }
+=======
+        }
+
+>>>>>>> origin/trunk

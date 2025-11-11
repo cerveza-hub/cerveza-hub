@@ -4,6 +4,10 @@ from dotenv import load_dotenv
 from flask import Flask
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
+<<<<<<< HEAD
+=======
+from flask_mail import Mail # 1. Importar Flask-Mail
+>>>>>>> origin/trunk
 
 from core.configuration.configuration import get_app_version
 from core.managers.config_manager import ConfigManager
@@ -11,17 +15,26 @@ from core.managers.error_handler_manager import ErrorHandlerManager
 from core.managers.logging_manager import LoggingManager
 from core.managers.module_manager import ModuleManager
 
+<<<<<<< HEAD
 # Load environment variables
 load_dotenv()
 
 # Create the instances
 db = SQLAlchemy()
 migrate = Migrate()
+=======
+load_dotenv()
+
+db = SQLAlchemy()
+migrate = Migrate()
+mail = Mail() # 2. Crear la instancia global de Mail
+>>>>>>> origin/trunk
 
 
 def create_app(config_name="development"):
     app = Flask(__name__)
 
+<<<<<<< HEAD
     # Load configuration according to environment
     config_manager = ConfigManager(app)
     config_manager.load_config(config_name=config_name)
@@ -35,6 +48,20 @@ def create_app(config_name="development"):
     module_manager.register_modules()
 
     # Register login manager
+=======
+    config_manager = ConfigManager(app)
+    config_manager.load_config(config_name=config_name)
+
+    db.init_app(app)
+    migrate.init_app(app, db)
+    
+    # 3. Inicializar Flask-Mail con la app
+    mail.init_app(app) 
+
+    module_manager = ModuleManager(app)
+    module_manager.register_modules()
+
+>>>>>>> origin/trunk
     from flask_login import LoginManager
 
     login_manager = LoginManager()
@@ -47,6 +74,7 @@ def create_app(config_name="development"):
 
         return User.query.get(int(user_id))
 
+<<<<<<< HEAD
     # Set up logging
     logging_manager = LoggingManager(app)
     logging_manager.setup_logging()
@@ -56,6 +84,14 @@ def create_app(config_name="development"):
     error_handler_manager.register_error_handlers()
 
     # Injecting environment variables into jinja context
+=======
+    logging_manager = LoggingManager(app)
+    logging_manager.setup_logging()
+
+    error_handler_manager = ErrorHandlerManager(app)
+    error_handler_manager.register_error_handlers()
+
+>>>>>>> origin/trunk
     @app.context_processor
     def inject_vars_into_jinja():
         return {
@@ -65,7 +101,27 @@ def create_app(config_name="development"):
             "APP_VERSION": get_app_version(),
         }
 
+<<<<<<< HEAD
     return app
 
 
 app = create_app()
+=======
+    try:
+        from app.modules.admin.routes import is_admin 
+
+        @app.context_processor
+        def inject_admin_status():
+            return dict(is_admin=is_admin)
+            
+    except ImportError as e:
+        app.logger.warning(f"Could not import is_admin: {e}. Injecting fallback.")
+        @app.context_processor
+        def inject_admin_status_fallback():
+            return dict(is_admin=lambda: False)
+
+    return app
+
+
+app = create_app()
+>>>>>>> origin/trunk

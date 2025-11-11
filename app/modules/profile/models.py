@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import os
 
 from cryptography.fernet import Fernet
@@ -11,6 +12,10 @@ if not FERNET_KEY:
 
 fernet = Fernet(FERNET_KEY)
 
+=======
+from app import db
+
+>>>>>>> origin/trunk
 
 class UserProfile(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -21,6 +26,7 @@ class UserProfile(db.Model):
     name = db.Column(db.String(100), nullable=False)
     surname = db.Column(db.String(100), nullable=False)
 
+<<<<<<< HEAD
     # Campos para 2FA
     twofa_enabled = db.Column(db.Boolean, default=False)
     twofa_secret = db.Column(db.Text, nullable=True)
@@ -35,6 +41,8 @@ class UserProfile(db.Model):
             return None
         return fernet.decrypt(self.twofa_secret.encode()).decode()
 
+=======
+>>>>>>> origin/trunk
     def save(self):
         if not self.id:
             db.session.add(self)

@@ -35,6 +35,7 @@
 
         <div class="card">
             <div class="card-body">
+<<<<<<< HEAD
                 <div class="d-flex align-items-center justify-content-between">
                     <h1><b>{{ dataset.ds_meta_data.title }}</b></h1>
                     <div>
@@ -42,6 +43,24 @@
                     </div>
                 </div>
                 <p class="text-secondary">{{ dataset.created_at.strftime('%B %d, %Y at %I:%M %p') }}</p>
+=======
+                <div class="d-flex align-items-start justify-content-between">
+        
+                    <div>
+                        <h1><b>{{ dataset.ds_meta_data.title }}</b></h1>
+                        <p class="text-secondary">{{ dataset.created_at.strftime('%B %d, %Y at %I:%M %p') }}</p>
+                    </div>
+
+                    <div class="text-end"> 
+                        <div>
+                            <span class="badge bg-secondary">{{ dataset.get_cleaned_publication_type() }}</span>
+                        </div>
+                        <p class="text-secondary mt-1">
+                            <i data-feather="arrow-down" class="me-1"></i>Nº downloads: {{ dataset.download_count }} 
+                        </p>
+                    </div>
+                </div>
+>>>>>>> origin/trunk
 
                 <div class="row mb-4">
 
@@ -64,7 +83,11 @@
                         </span>
                     </div>
                     <div class="col-md-8 col-12">
+<<<<<<< HEAD
                         <a href="{{ url_for('profile.public_profile', user_id=dataset.user.id) }}">{{ dataset.user.profile.surname }}, {{ dataset.user.profile.name }}</a>
+=======
+                        <a href="#">{{ dataset.user.profile.surname }}, {{ dataset.user.profile.name }}</a>
+>>>>>>> origin/trunk
                     </div>
 
                 </div>
@@ -161,6 +184,7 @@
             {% if dataset.ds_meta_data.dataset_doi %}
             <div class="card-body" style="padding-top: 0px">
 
+<<<<<<< HEAD
                 <div id="dataset_doi_uvlhub" style="display: none">
                     {{ dataset.get_uvlhub_doi() }}
                 </div>
@@ -176,6 +200,29 @@
                 </button>
                 
                 <div id="dataset_doi_uvlhub" style="display: none">
+=======
+                <div class="d-flex justify-content-between align-items-center">
+                
+                    <button type="button" class="btn doi_button btn-sm" onclick="copyText('dataset_doi_uvlhub')">
+                        <span class="button_doi_id">
+                            <i data-feather="clipboard" class="center-button-icon" style="cursor: pointer"></i>
+                            <b>DOI</b>
+                        </span>
+                        <span class="doi_text">
+                            {{ dataset.get_uvlhub_doi() }}
+                        </span>
+                    </button>
+
+                    <a href="{{ url_for('dataset.get_dataset_stats', dataset_id=dataset.id) }}" 
+                    class="btn btn-primary btn-sm"
+                    style="border-radius: 5px; cursor: pointer;">
+                        
+                        <i data-feather="bar-chart-2" class="center-button-icon"></i>
+                        Statistics
+                    </a>
+                
+                </div> <div id="dataset_doi_uvlhub" style="display: none">
+>>>>>>> origin/trunk
                     {{ dataset.get_uvlhub_doi() }}
                 </div>
                 
@@ -229,6 +276,7 @@
 
     </div>
 
+<<<<<<< HEAD
     <div class="col-xl-8 col-lg-12 col-md-12 col-sm-12 mt-4"> 
     <div class="card">
         <div class="card-body">
@@ -278,6 +326,8 @@
         </div>
     </div>
 
+=======
+>>>>>>> origin/trunk
     <div class="col-xl-4 col-lg-12 col-md-12 col-sm-12">
 
         <div class="list-group">
@@ -543,6 +593,7 @@
     }
 </script>
 
+<<<<<<< HEAD
 <script>
     // Asegúrate de que esta función exista en tu JS
     document.addEventListener('DOMContentLoaded', function () {
@@ -718,4 +769,6 @@
 
 </script>
 
+=======
+>>>>>>> origin/trunk
 {% endblock %}

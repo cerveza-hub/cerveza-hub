@@ -4,7 +4,11 @@ import os
 import shutil
 import tempfile
 import uuid
+<<<<<<< HEAD
 from datetime import datetime, timezone
+=======
+from datetime import datetime, timezone, timedelta
+>>>>>>> origin/trunk
 from zipfile import ZipFile
 
 from flask import (
@@ -16,6 +20,7 @@ from flask import (
     request,
     send_from_directory,
     url_for,
+<<<<<<< HEAD
 )
 from flask_login import current_user, login_required
 
@@ -23,6 +28,16 @@ from app.modules.comment.services import CommentService
 from app.modules.dataset import dataset_bp
 from app.modules.dataset.forms import DataSetForm
 from app.modules.dataset.models import DSDownloadRecord
+=======
+    flash,
+)
+from flask_login import current_user, login_required
+
+from app.modules.dataset import dataset_bp
+from app import db
+from app.modules.dataset.forms import DataSetForm, CommunityForm, CommunityDatasetForm
+from app.modules.dataset.models import DSDownloadRecord, DataSet, DSViewRecord
+>>>>>>> origin/trunk
 from app.modules.dataset.services import (
     AuthorService,
     DataSetService,
@@ -30,6 +45,10 @@ from app.modules.dataset.services import (
     DSDownloadRecordService,
     DSMetaDataService,
     DSViewRecordService,
+<<<<<<< HEAD
+=======
+    CommunityService,
+>>>>>>> origin/trunk
 )
 from app.modules.zenodo.services import ZenodoService
 
@@ -42,7 +61,11 @@ dsmetadata_service = DSMetaDataService()
 zenodo_service = ZenodoService()
 doi_mapping_service = DOIMappingService()
 ds_view_record_service = DSViewRecordService()
+<<<<<<< HEAD
 
+=======
+community_service = CommunityService()
+>>>>>>> origin/trunk
 
 @dataset_bp.route("/dataset/upload", methods=["GET", "POST"])
 @login_required
@@ -230,6 +253,7 @@ def download_dataset(dataset_id):
             download_date=datetime.now(timezone.utc),
             download_cookie=user_cookie,
         )
+<<<<<<< HEAD
 
     return resp
 
@@ -239,6 +263,71 @@ def download_dataset(dataset_id):
 
 @dataset_bp.route("/doi/<path:doi>/", methods=["GET"])
 def subdomain_index(doi):
+=======
+        
+        try:
+            dataset.download_count += 1
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            print(f"Error al incrementar el contador de descargas: {e}")
+
+    return resp
+
+@dataset_bp.route("/dataset/<int:dataset_id>/stats", methods=["GET"])
+def get_dataset_stats(dataset_id):
+    """
+    Retrieve the stats for a given dataset, including some "curious" statistics (download rate, age, author count, etc.)
+    """
+    dataset = dataset_service.get_or_404(dataset_id)
+
+    # BASIC METRICS
+    total_views = DSViewRecord.query.filter_by(dataset_id=dataset_id).count()
+    total_downloads = dataset.download_count
+    dataset_age_in_days = (datetime.now(timezone.utc).replace(tzinfo=None) - dataset.created_at).days
+    authors_number = len(dataset.ds_meta_data.authors)
+
+    # SPECIFIC DATASET METRICS
+    features_count = 0
+    models_count = 0
+    if dataset.ds_meta_data.ds_metrics:
+        features_count = dataset.ds_meta_data.ds_metrics.number_of_features
+        models_count = dataset.ds_meta_data.ds_metrics.number_of_models
+
+    # POPULAR METRICS
+    seven_days_ago = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=7)
+    
+    download_rate = 0
+    if total_views > 0:
+        download_rate = round((total_downloads / total_views) * 100, 2)
+    
+    views_last_week = DSViewRecord.query.filter(
+        DSViewRecord.dataset_id == dataset_id,
+        DSViewRecord.view_date >= seven_days_ago).count()
+
+    downloads_last_week = DSDownloadRecord.query.filter(
+        DSDownloadRecord.dataset_id == dataset_id,
+        DSDownloadRecord.download_date >= seven_days_ago).count()
+
+    return render_template(
+        "dataset/statistics.html",
+        dataset=dataset,
+        
+        total_views=total_views,
+        total_downloads=total_downloads,
+        dataset_age_in_days=dataset_age_in_days,
+        authors_number=authors_number,
+        features_count=features_count,
+        models_count=models_count,
+        download_rate=download_rate,
+        views_last_week=views_last_week,
+        downloads_last_week=downloads_last_week
+    )
+
+@dataset_bp.route("/doi/<path:doi>/", methods=["GET"])
+def subdomain_index(doi):
+
+>>>>>>> origin/trunk
     # Check if the DOI is an old DOI
     new_doi = doi_mapping_service.get_new_doi(doi)
     if new_doi:
@@ -254,6 +343,7 @@ def subdomain_index(doi):
     # Get dataset
     dataset = ds_meta_data.data_set
 
+<<<<<<< HEAD
     # --- INICIO DE LOS CAMBIOS PARA COMENTARIOS ---
     # 1. Obtener los comentarios del dataset
     # Asegúrate de que 'comment_service' esté inicializado al principio del archivo routes.py
@@ -273,6 +363,13 @@ def subdomain_index(doi):
     # --- FIN DE LOS CAMBIOS PARA COMENTARIOS ---
 
     resp.set_cookie("view_cookie", user_cookie)
+=======
+    # Save the cookie to the user's browser
+    user_cookie = ds_view_record_service.create_cookie(dataset=dataset)
+    resp = make_response(render_template("dataset/view_dataset.html", dataset=dataset))
+    resp.set_cookie("view_cookie", user_cookie)
+
+>>>>>>> origin/trunk
     return resp
 
 
@@ -289,6 +386,7 @@ def get_unsynchronized_dataset(dataset_id):
     return render_template("dataset/view_dataset.html", dataset=dataset)
 
 
+<<<<<<< HEAD
 # AÑADIDO PARA COMMENT
 
 
@@ -397,3 +495,109 @@ def get_most_viewed_datasets():
     except Exception as e:
         logger.exception(f"Error getting most viewed datasets: {e}")
         return jsonify({"message": "Failed to get ranking"}), 500
+=======
+@dataset_bp.route("/community/create", methods=["GET", "POST"])
+@login_required
+def create_community():
+    form = CommunityForm()
+    if form.validate_on_submit():
+
+        logo_file = request.files.get("logo")
+        if logo_file and logo_file.filename != '':
+            try:
+                if not form.logo.validate(form, extra_validators=form.logo.validators):
+                    if not form.logo.errors:
+                        form.logo.errors.append("Tipo de archivo de logo no permitido.")
+                    pass 
+
+            except Exception:
+                form.logo.errors.append("Error al procesar el archivo de logo.")
+                pass
+                
+        else:
+            logo_file = None 
+        if not form.errors:
+            try:
+                community = community_service.create_from_form(
+                    form=form, 
+                    current_user=current_user, 
+                    logo_file=logo_file
+                )
+                return redirect(url_for('dataset.view_community', community_id=community.id))
+
+            except Exception as exc:
+                logger.exception(f"Excepción al crear la comunidad: {exc}")
+                form.name.errors.append("Ya existe una comunidad con este nombre. Por favor, elige otro.")
+    return render_template("community/create_community.html", form=form)
+
+
+@dataset_bp.route("/community/<int:community_id>/", methods=["GET"])
+def view_community(community_id):
+    community = community_service.get_or_404(community_id)
+    return render_template("community/view_community.html", community=community)
+
+@dataset_bp.route("/communities/", methods=["GET"])
+def list_communities():
+    """Muestra una lista de todas las comunidades creadas."""
+    
+    try:
+        communities = community_service.get_all_communities()
+        
+        return render_template("community/list_communities.html", communities=communities)
+        
+    except Exception as exc:
+        logger.exception(f"Excepción al listar comunidades: {exc}")
+        return jsonify({"Error": "No se pudo cargar la lista de comunidades."}), 500
+    
+@dataset_bp.route("/community/<int:community_id>/logo", methods=["GET"])
+def serve_community_logo(community_id):
+
+    
+    community = community_service.get_or_404(community_id)
+    full_path = community.logo_path
+    
+    if not full_path or not os.path.exists(full_path):
+
+        return redirect(url_for('static', filename='images/default_community_logo.png'))
+    working_dir = os.getenv("WORKING_DIR", os.path.join(os.getcwd(), "tmp_uploads")) 
+    directory = os.path.dirname(full_path)
+    filename = os.path.basename(full_path) 
+    
+    # ... (control de seguridad y envío)
+    return send_from_directory(directory, filename)
+
+
+@dataset_bp.route("/community/<int:community_id>/manage_datasets", methods=["GET", "POST"])
+@login_required 
+def manage_community_datasets(community_id):
+
+    community = community_service.get_or_404(community_id)
+    form = CommunityDatasetForm()
+    all_datasets = DataSet.query.order_by(DataSet.created_at.desc()).all()
+    dataset_choices = [(str(ds.id), f"{ds.name()} (ID: {ds.id})") for ds in all_datasets] 
+    form.datasets.choices = dataset_choices 
+
+    if form.validate_on_submit():
+
+        try:
+            selected_dataset_ids = form.datasets.data 
+            selected_datasets = DataSet.query.filter(DataSet.id.in_(selected_dataset_ids)).all()
+
+            community_service.update_datasets(community_id, selected_datasets)
+
+            flash(f"Datasets actualizados para la comunidad '{community.name}'.", 'success')
+            return redirect(url_for('dataset.view_community', community_id=community.id))
+        
+        except Exception as exc:
+
+            community_service.repository.session.rollback() 
+            flash('Error al guardar la relación de datasets.', 'danger')
+
+    elif request.method == 'GET':
+        current_dataset_ids = [str(ds.id) for ds in community.datasets] 
+        form.datasets.data = current_dataset_ids
+    
+    return render_template("community/manage_datasets.html", 
+                           community=community, 
+                           form=form)
+>>>>>>> origin/trunk

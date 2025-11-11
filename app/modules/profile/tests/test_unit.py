@@ -3,7 +3,10 @@ import pytest
 from app import db
 from app.modules.auth.models import User
 from app.modules.conftest import login, logout
+<<<<<<< HEAD
 from app.modules.dataset.models import DataSet, DSMetaData, PublicationType
+=======
+>>>>>>> origin/trunk
 from app.modules.profile.models import UserProfile
 
 
@@ -37,6 +40,7 @@ def test_edit_profile_page_get(test_client):
     assert b"Edit profile" in response.data, "The expected content is not present on the page"
 
     logout(test_client)
+<<<<<<< HEAD
 
 
 def test_view_public_profile_datasets(test_client):
@@ -78,3 +82,5 @@ def test_view_public_profile_datasets(test_client):
     assert b"Enable" not in response.data and b"Disable" not in response.data  # Comprobar no están controles 2FA
 
     logout(test_client)
+=======
+>>>>>>> origin/trunk

@@ -70,13 +70,20 @@ class DataSet(db.Model):
 
     ds_meta_data_id = db.Column(db.Integer, db.ForeignKey("ds_meta_data.id"), nullable=False)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+<<<<<<< HEAD
+=======
+    download_count = db.Column(db.Integer, default=0, nullable=False)
+>>>>>>> origin/trunk
 
     ds_meta_data = db.relationship("DSMetaData", backref=db.backref("data_set", uselist=False))
     feature_models = db.relationship("FeatureModel", backref="data_set", lazy=True, cascade="all, delete")
 
+<<<<<<< HEAD
     #   AÑADIDO PARA COMMENT
     comments = db.relationship("Comment", backref="data_set", lazy=True, cascade="all, delete")
 
+=======
+>>>>>>> origin/trunk
     def name(self):
         return self.ds_meta_data.title
 
@@ -128,12 +135,46 @@ class DataSet(db.Model):
             "files_count": self.get_files_count(),
             "total_size_in_bytes": self.get_file_total_size(),
             "total_size_in_human_format": self.get_file_total_size_for_human(),
+<<<<<<< HEAD
+=======
+            "download_count": self.download_count,
+>>>>>>> origin/trunk
         }
 
     def __repr__(self):
         return f"DataSet<{self.id}>"
 
 
+<<<<<<< HEAD
+=======
+
+community_dataset_association = db.Table(
+    "community_dataset_association",
+    db.Column("community_id", db.Integer, db.ForeignKey("community.id"), primary_key=True),
+    db.Column("dataset_id", db.Integer, db.ForeignKey("data_set.id"), primary_key=True),
+    db.Column("added_at", db.DateTime, default=datetime.utcnow),
+)
+
+class Community(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(120), unique=True, nullable=False)
+    description = db.Column(db.Text, nullable=False)
+    logo_path = db.Column(db.String(255), nullable=False) 
+    
+    creator_user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    datasets = db.relationship(
+        "DataSet", secondary=community_dataset_association, backref=db.backref("communities", lazy="dynamic"), lazy="dynamic")
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'logo_path': self.logo_path,
+        }
+    def __repr__(self):
+        return f"Community<{self.id} - {self.name}>"
+
+>>>>>>> origin/trunk
 class DSDownloadRecord(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True)
