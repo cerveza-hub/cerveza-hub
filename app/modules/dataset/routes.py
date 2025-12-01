@@ -72,10 +72,14 @@ zenodo_service = ZenodoService()
 doi_mapping_service = DOIMappingService()
 ds_view_record_service = DSViewRecordService()
 <<<<<<< HEAD
+<<<<<<< HEAD
 
 =======
 community_service = CommunityService()
 >>>>>>> origin/trunk
+=======
+comment_service = CommentService()
+>>>>>>> trunk_1
 
 
 @dataset_bp.route("/dataset/upload", methods=["GET", "POST"])
@@ -89,8 +93,36 @@ def create_dataset():
         upload_to_zenodo = request.form.get('upload_to_zenodo') == 'true'
         
         try:
+<<<<<<< HEAD
             # --- FIX HERE: robust CSV reading ---
             f.seek(0) 
+=======
+            logger.info("Creating dataset...")
+            dataset = dataset_service.create_from_form(form=form, current_user=current_user)
+            logger.info(f"Created dataset: {dataset}")
+            dataset_service.move_feature_models(dataset)
+        except Exception as exc:
+            logger.exception(f"Exception while create dataset data in local {exc}")
+            return jsonify({"Exception while create dataset data in local: ": str(exc)}), 400
+
+        # send dataset as deposition to Zenodo
+        data = {}
+        try:
+            zenodo_response_json = zenodo_service.create_new_deposition(dataset)
+            response_data = json.dumps(zenodo_response_json)
+            data = json.loads(response_data)
+        except Exception as exc:
+            data = {}
+            zenodo_response_json = {}
+            logger.exception(f"Exception while create dataset data in Zenodo {exc}")
+
+        if data.get("id"):
+            deposition_id = data.get("id")
+
+            # update dataset with deposition id in Zenodo
+            dataset_service.update_dsmetadata(dataset.ds_meta_data_id, deposition_id=deposition_id)
+
+>>>>>>> trunk_1
             try:
                 df = pd.read_csv(f, encoding='utf-8', sep=None, engine='python')
             except Exception:
@@ -120,6 +152,7 @@ def create_dataset():
             db.session.add(dataset)
             db.session.commit() 
 
+<<<<<<< HEAD
             upload_folder = current_app.config.get('UPLOAD_FOLDER', 'uploads')
             dataset_folder = os.path.join(
                 upload_folder, 
@@ -176,6 +209,22 @@ def create_dataset():
                 dataset_service.update_dsmetadata(dataset.ds_meta_data_id, dataset_doi=deposition_doi)
                 db.session.commit()
                 logger.warning(f"ZENODO FAILED (403). Using SIMULATED DOI: {deposition_doi}")
+=======
+                # publish deposition y guardar DOI
+                zenodo_response = zenodo_service.publish_deposition(deposition_id)
+
+                doi = zenodo_response.get("doi")
+                if doi:
+                    dataset_service.update_dsmetadata(dataset.ds_meta_data_id, dataset_doi=doi)
+                    logger.info(f"DOI actualizado: {doi}")
+
+                # update DOI
+                # deposition_doi = zenodo_service.get_doi(deposition_id)
+                # dataset_service.update_dsmetadata(dataset.ds_meta_data_id, dataset_doi=deposition_doi)
+            except Exception as e:
+                msg = f"it has not been possible upload feature models in Zenodo and update the DOI: {e}"
+                return jsonify({"message": msg}), 200
+>>>>>>> trunk_1
 
         db.session.refresh(dataset.ds_meta_data)
         final_doi = dataset.ds_meta_data.dataset_doi
@@ -237,6 +286,7 @@ def upload():
 
 
 @dataset_bp.route("/dataset/file/delete", methods=["POST"])
+@login_required
 def delete():
     data = request.get_json()
     filename = data.get("file")
@@ -266,8 +316,19 @@ def download_dataset(dataset_id):
     zip_path = os.path.join(temp_dir, f"dataset_{dataset_id}.zip")
 
     with ZipFile(zip_path, "w") as zipf:
+<<<<<<< HEAD
         filename = os.path.basename(dataset.csv_file_path)
         zipf.write(dataset.csv_file_path, arcname=filename)
+=======
+        for subdir, dirs, files in os.walk(file_path):
+            for file in files:
+                full_path = os.path.join(subdir, file)
+                relative_path = os.path.relpath(full_path, file_path)
+                zipf.write(
+                    full_path,
+                    arcname=os.path.join(os.path.basename(zip_path[:-4]), relative_path),
+                )
+>>>>>>> trunk_1
 
     user_cookie = request.cookies.get("download_cookie")
     if not user_cookie:
@@ -307,11 +368,9 @@ def download_dataset(dataset_id):
     return resp
 
 
-# AÑADIDO PARA COMMENT
-
-
 @dataset_bp.route("/doi/<path:doi>/", methods=["GET"])
 def subdomain_index(doi):
+<<<<<<< HEAD
 =======
         
         try:
@@ -366,6 +425,9 @@ def subdomain_index(doi):
 =======
 
 >>>>>>> origin/trunk
+=======
+
+>>>>>>> trunk_1
     # Check if the DOI is an old DOI
 >>>>>>> 60e60f3715d5b2d66af5f212768c480611e6dcdb
     new_doi = doi_mapping_service.get_new_doi(doi)
@@ -381,6 +443,7 @@ def subdomain_index(doi):
         logger.error(f"No DataSet found for metadata with DOI {doi}")
         abort(404)
 
+<<<<<<< HEAD
 <<<<<<< HEAD
     user_cookie = None 
     try:
@@ -437,19 +500,29 @@ def subdomain_index(doi):
     comments = comment_service.get_comments_for_dataset(dataset.id)
 
     # 2. Guardar la cookie de vista al usuario
+=======
+>>>>>>> trunk_1
     user_cookie = ds_view_record_service.create_cookie(dataset=dataset)
 
-    # 3. Crear la respuesta, pasando los 'comments' al template
+    recs_general = dataset_service.get_similar_datasets(target_dataset_id=dataset.id, field_type="full_text_corpus")
+    recs_authors = dataset_service.get_similar_datasets(target_dataset_id=dataset.id, field_type="authors")
+    recs_tags = dataset_service.get_similar_datasets(target_dataset_id=dataset.id, field_type="tags")
+    recs_affiliation = dataset_service.get_similar_datasets(target_dataset_id=dataset.id, field_type="affiliation")
+    comments = comment_service.get_comments_for_dataset(dataset.id)
+
     resp = make_response(
         render_template(
             "dataset/view_dataset.html",
             dataset=dataset,
-            comments=comments,  # <--- Pasamos la lista de comentarios
+            recs_general=recs_general,
+            recs_authors=recs_authors,
+            recs_tags=recs_tags,
+            recs_affiliation=recs_affiliation,
+            comments=comments,
         )
     )
-    # --- FIN DE LOS CAMBIOS PARA COMENTARIOS ---
-
     resp.set_cookie("view_cookie", user_cookie)
+<<<<<<< HEAD
 =======
     # Save the cookie to the user's browser
     user_cookie = ds_view_record_service.create_cookie(dataset=dataset)
@@ -458,14 +531,25 @@ def subdomain_index(doi):
 >>>>>>> 60e60f3715d5b2d66af5f212768c480611e6dcdb
 
 >>>>>>> origin/trunk
+=======
+
+>>>>>>> trunk_1
     return resp
 
 
 @dataset_bp.route("/dataset/unsynchronized/<int:dataset_id>/", methods=["GET"])
 @login_required
 def get_unsynchronized_dataset(dataset_id):
+<<<<<<< HEAD
     
     dataset = dataset_service.get_or_404(dataset_id)
+=======
+    """Muestra un dataset local (no sincronizado) del usuario actual."""
+
+    # Get dataset
+    dataset = dataset_service.get_unsynchronized_dataset(current_user.id, dataset_id)
+
+>>>>>>> trunk_1
     if not dataset:
         abort(404)
         
@@ -473,6 +557,7 @@ def get_unsynchronized_dataset(dataset_id):
         doi_only = dataset.ds_meta_data.dataset_doi.replace("https://doi.org/", "")
         return redirect(url_for('dataset.subdomain_index', doi=doi_only), code=301)
 
+<<<<<<< HEAD
     user_cookie = None 
     try:
         user_cookie = request.cookies.get("view_cookie")
@@ -530,13 +615,27 @@ def get_unsynchronized_dataset(dataset_id):
 comment_service = CommentService()  # Inicializar el servicio
 
 # 1. POST para crear un comentario
+=======
+    recs_general = dataset_service.get_similar_datasets(target_dataset_id=dataset.id, field_type="full_text_corpus")
+    recs_authors = dataset_service.get_similar_datasets(target_dataset_id=dataset.id, field_type="authors")
+    recs_tags = dataset_service.get_similar_datasets(target_dataset_id=dataset.id, field_type="tags")
+    recs_affiliation = dataset_service.get_similar_datasets(target_dataset_id=dataset.id, field_type="affiliation")
+
+    return render_template(
+        "dataset/view_dataset.html",
+        dataset=dataset,
+        recs_general=recs_general,
+        recs_authors=recs_authors,
+        recs_tags=recs_tags,
+        recs_affiliation=recs_affiliation,
+    )
+>>>>>>> trunk_1
 
 
 @dataset_bp.route("/dataset/<int:dataset_id>/comments", methods=["POST"])
 @login_required
 def create_comment_endpoint(dataset_id):
     """Crea un comentario en un dataset."""
-    # Intentar leer JSON, luego fallback a form data
     data = request.get_json(silent=True)
 
     if data:
@@ -546,11 +645,8 @@ def create_comment_endpoint(dataset_id):
         content = request.form.get("content")
         parent_id = request.form.get("parent_id")
 
-    # --- CAMBIO CLAVE ---
-    # Convertir cadena vacía ('') a None para que SQLAlchemy lo interprete como NULL
     if parent_id == "":
         parent_id = None
-    # --- FIN DEL CAMBIO ---
 
     if not content:
         return jsonify({"message": "Content is required"}), 400
@@ -564,7 +660,7 @@ def create_comment_endpoint(dataset_id):
             author_id=current_user.id,
             dataset_id=dataset_id,
             content=content,
-            parent_id=parent_id,  # None o entero válido
+            parent_id=parent_id,
         )
         return jsonify(comment.to_dict()), 201
 
@@ -576,7 +672,6 @@ def create_comment_endpoint(dataset_id):
         )
 
 
-# 2. GET para listar comentarios
 @dataset_bp.route("/dataset/<int:dataset_id>/comments", methods=["GET"])
 def list_comments_endpoint(dataset_id):
     """Lista los comentarios asociados a un dataset."""
@@ -585,13 +680,12 @@ def list_comments_endpoint(dataset_id):
     return jsonify(comments_data), 200
 
 
-# 3. DELETE para moderar/eliminar (autor del dataset)
 @dataset_bp.route("/comments/<int:comment_id>", methods=["DELETE"])
 @login_required
 def delete_comment_endpoint(comment_id):
     """Permite eliminar un comentario (solo el autor del dataset)."""
     comment = comment_service.get_or_404(comment_id)
-    dataset_author_id = comment.data_set.user_id  # Asumiendo que DataSet tiene user_id
+    dataset_author_id = comment.data_set.user_id
 
     if current_user.id != dataset_author_id:
         return (
@@ -614,7 +708,7 @@ def ranking():
 
 @dataset_bp.route("/dataset/ranking/downloads", methods=["GET"])
 def get_most_downloaded_datasets():
-    """Obtiene el ranking de datasets más descargados."""
+    """Obtiene el ranking de datasets más descargados (Top 5)."""
     try:
         ranking = dataset_service.get_most_downloaded_datasets(limit=5)
         return jsonify(ranking), 200
@@ -625,7 +719,7 @@ def get_most_downloaded_datasets():
 
 @dataset_bp.route("/dataset/ranking/views", methods=["GET"])
 def get_most_viewed_datasets():
-    """Obtiene el ranking de datasets más vistos."""
+    """Obtiene el ranking de datasets más vistos (Top 5)."""
     try:
         ranking = dataset_service.get_most_viewed_datasets(limit=5)
         return jsonify(ranking), 200

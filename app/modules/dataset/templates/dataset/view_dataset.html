@@ -112,6 +112,7 @@
                 {% endif %}
                 {% if dataset.ds_meta_data.dataset_doi %}
                 <div class="row mb-2">
+<<<<<<< HEAD
                     <div class="col-md-4 col-12">
                         <span class=" text-secondary">Zenodo record</span>
                     </div>
@@ -134,6 +135,32 @@
                         </a>
                     </div>
                     {% endif %}
+=======
+                        <div class="col-md-4 col-12">
+                            <span class=" text-secondary">
+                                Zenodo record
+                            </span>
+                        </div>
+                        {% if FLASK_ENV == 'production' %}
+                            <div class="col-md-8 col-12">
+                                <a href="https://zenodo.org/records/{{ dataset.ds_meta_data.deposition_id }}" target="_blank">
+                                    https://zenodo.org/records/{{ dataset.ds_meta_data.deposition_id }}
+                                </a>
+                            </div>
+                        {% elif FLASK_ENV == 'development' %}
+                            <div class="col-md-8 col-12">
+                                <a href="https://sandbox.zenodo.org/records/{{ dataset.ds_meta_data.deposition_id }}" target="_blank">
+                                    https://sandbox.zenodo.org/records/{{ dataset.ds_meta_data.deposition_id }}
+                                </a>
+                            </div>
+                        {% else %}
+                            <div class="col-md-8 col-12">
+                                <a href="https://zenodo.org/records/{{ dataset.ds_meta_data.deposition_id }}" target="_blank">
+                                    https://sandbox.zenodo.org/records/{{ dataset.ds_meta_data.deposition_id }}
+                                </a>
+                            </div>
+                        {% endif %}
+>>>>>>> trunk_1
                 </div>
                 {% endif %}
                 <div class="row mb-2">
@@ -157,6 +184,9 @@
                 <div id="dataset_doi_uvlhub" style="display: none">
                     {{ dataset.get_uvlhub_doi() }}
                 </div>
+                <div id="dataset_doi_uvlhub_duplicate" style="display: none">
+                    {{ dataset.get_uvlhub_doi() }}
+                </div>
 
                 <button type="button" class="btn doi_button btn-sm" onclick="copyText('dataset_doi_uvlhub')">
                     <span class="button_doi_id">
@@ -167,6 +197,7 @@
                         {{ dataset.get_uvlhub_doi() }}
                     </span>
                 </button>
+<<<<<<< HEAD
                 
                 <div id="dataset_doi_uvlhub" style="display: none">
 =======
@@ -199,10 +230,13 @@
 >>>>>>> 60e60f3715d5b2d66af5f212768c480611e6dcdb
                     {{ dataset.get_uvlhub_doi() }}
                 </div>
+=======
+>>>>>>> trunk_1
             </div>
             {% endif %}
         </div>
 
+<<<<<<< HEAD
         <div class="card mt-4">
             <div class="card-header">
                 <h5 class="card-title mb-0">Data Preview</h5>
@@ -255,6 +289,61 @@
                 
                 CervezaHub Team (2025) - Members of Team 1 and 2 - Evolution and Configuration Management, 2025
                 <i>CervezaHub: A CSV data repository using open science principles</i>
+=======
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0">Similar Datasets</h4>
+            </div>
+            <div class="card-body">
+                <ul class="nav nav-tabs" id="recommendationTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="rec-general-tab" data-bs-toggle="tab" data-bs-target="#rec-general" type="button" role="tab" aria-controls="rec-general" aria-selected="true">General</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="rec-authors-tab" data-bs-toggle="tab" data-bs-target="#rec-authors" type="button" role="tab" aria-controls="rec-authors" aria-selected="false">Por Autor</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="rec-tags-tab" data-bs-toggle="tab" data-bs-target="#rec-tags" type="button" role="tab" aria-controls="rec-tags" aria-selected="false">Por Tags</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="rec-affiliation-tab" data-bs-toggle="tab" data-bs-target="#rec-affiliation" type="button" role="tab" aria-controls="rec-affiliation" aria-selected="false">Por Afiliación</button>
+                    </li>
+                </ul>
+
+                <div class="tab-content" id="recommendationTabsContent" style="padding-top: 20px;">
+                    <div class="tab-pane fade show active" id="rec-general" role="tabpanel" aria-labelledby="rec-general-tab">
+                        {% set recommendations = recs_general %}
+                        {% include 'dataset/recommendation_list.html' %}
+                    </div>
+                    <div class="tab-pane fade" id="rec-authors" role="tabpanel" aria-labelledby="rec-authors-tab">
+                        {% set recommendations = recs_authors %}
+                        {% include 'dataset/recommendation_list.html' %}
+                    </div>
+                    <div class="tab-pane fade" id="rec-tags" role="tabpanel" aria-labelledby="rec-tags-tab">
+                        {% set recommendations = recs_tags %}
+                        {% include 'dataset/recommendation_list.html' %}
+                    </div>
+                    <div class="tab-pane fade" id="rec-affiliation" role="tabpanel" aria-labelledby="rec-affiliation-tab">
+                        {% set recommendations = recs_affiliation %}
+                        {% include 'dataset/recommendation_list.html' %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <div class="card">
+            <div class="card-body">
+                <h3> Related publication </h3>
+                
+                David Romero-Organvidez, José A. Galindo, Chico Sundermann, Jose-Miguel Horcas, David Benavides,
+                <i>UVLHub: A feature model data repository using UVL and open science principles</i>,
+                Journal of Systems and Software,
+                2024,
+                112150,
+                ISSN 0164-1212,
+                <a href="https://doi.org/10.1016/j.jss.2024.112150" target="_blank">https://doi.org/10.1016/j.jss.2024.112150</a>
+>>>>>>> trunk_1
             </div>
             <div class="card-body mt-0 pt-0">
                 <button onclick="copyText('bibtex_cite')" class="btn btn-light btn-sm" style="border-radius: 5px; margin-right: 10px">
@@ -275,6 +364,7 @@
                 </button>
             </div>
         </div>
+<<<<<<< HEAD
 
     </div>
 
@@ -311,27 +401,64 @@
                                     onclick="showReplyForm('{{ comment.id }}', '{{ comment.author.profile.name }} {{ comment.author.profile.surname }}')" 
                                     type="button">Reply</button>
                         {% endif %}
+=======
+        
+        <div class="card mt-4">
+            <div class="card-body">
+                <h5 class="card-title mb-3">Comments</h5>
+                <div id="comments-section">
+                    {% if current_user.is_authenticated %}
+                    <div class="card p-3 mb-4">
+                        <form id="comment-form" method="POST" action="{{ url_for('dataset.create_comment_endpoint', dataset_id=dataset.id) }}">
+                            <input type="hidden" name="parent_id" id="comment-parent-id" value="">
+                            <textarea class="form-control mb-2" id="comment-content" name="content" placeholder="Write down your comment below..." required></textarea>
+                            <button type="submit" class="btn btn-primary btn-sm">Submit</button>
+                        </form>
+>>>>>>> trunk_1
                     </div>
-                    
-                    {% for reply in comment.replies %}
-                        <div class="reply-item ms-4 border-start ps-3 pt-2" id="comment-{{ reply.id }}">
-                            <p class="mb-0">
-                                <strong>{{ reply.author.profile.name }} {{ reply.author.profile.surname }}</strong> 
-                                <span class="text-muted small"> | {{ reply.created_at.strftime('%d/%m/%Y %H:%M') }}</span>
-                            </p>
-                            <p class="mb-1">{{ reply.content }}</p>
+                    {% endif %}
+
+                    {% for comment in comments %}
+                    <div class="comment-item border-start border-3 ps-3 mb-3" id="comment-{{ comment.id }}">
+                        <p class="mb-0">
+                            <strong>{{ comment.author.profile.name }} {{ comment.author.profile.surname }}</strong> 
+                            <span class="text-muted small"> | {{ comment.created_at.strftime('%d/%m/%Y %H:%M') }}</span>
+                        </p>
+                        <p class="mb-1">{{ comment.content }}</p>
+                        
+                        <div class="comment-actions mb-2">
+                            {% if current_user.is_authenticated %}
+                                {% if current_user.id == dataset.user_id %}
+                                    <button class="btn btn-danger btn-sm" onclick="deleteComment('{{ comment.id }}')" type="button">Delete</button>
+                                {% endif %}
+                                <button class="btn btn-secondary btn-sm" 
+                                        onclick="showReplyForm('{{ comment.id }}', '{{ comment.author.profile.name }} {{ comment.author.profile.surname }}')" 
+                                        type="button">Reply</button>
+                            {% endif %}
                         </div>
+                        
+                        {% for reply in comment.replies %}
+                            <div class="reply-item ms-4 border-start ps-3 pt-2" id="comment-{{ reply.id }}">
+                                <p class="mb-0">
+                                    <strong>{{ reply.author.profile.name }} {{ reply.author.profile.surname }}</strong> 
+                                    <span class="text-muted small"> | {{ reply.created_at.strftime('%d/%m/%Y %H:%M') }}</span>
+                                </p>
+                                <p class="mb-1">{{ reply.content }}</p>
+                            </div>
+                        {% endfor %}
+                    </div>
                     {% endfor %}
                 </div>
-                {% endfor %}
             </div>
         </div>
+        
     </div>
 
 =======
 >>>>>>> origin/trunk
     <div class="col-xl-4 col-lg-12 col-md-12 col-sm-12">
 
+<<<<<<< HEAD
         <!-- --- CSV FILE CARD (REPLACES UVL LIST) --- -->
         <div class="card">
             <div class="card-header">
@@ -361,6 +488,88 @@
         
     
         <a href="/dataset/download/{{ dataset.id }}" class="btn btn-primary mt-3" style="border-radius: 5px; width: 100%;">
+=======
+        <div class="list-group">
+
+            <div class="list-group-item">
+                <div class="row">
+                    <div class="col-12 d-flex justify-content-between align-items-center">
+                        <h4 style="margin-bottom: 0px">UVL models</h4>
+                        <h4 style="margin-bottom: 0px;"><span class="badge bg-dark">{{ dataset.get_files_count() }}</span></h4>
+                    </div>
+                </div>
+            </div>
+            
+
+            {% for feature_model in dataset.feature_models %}
+                {% for file in feature_model.files %}
+                    <div class="list-group-item">
+                        <div class="row">
+                            <div class="col-12">
+
+                                <div class="row">
+                                    <div class="col-8">
+                                        <i data-feather="file"></i> {{ file.name }}
+                                        <br>
+                                        <small class="text-muted">({{ file.get_formatted_size() }})</small>
+                                    </div>
+                                    <div class="col-2">
+                                        <div id="check_{{ file.id }}">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-12 text-end" >
+
+                                <button onclick="viewFile('{{ file.id }}')" class="btn btn-outline-secondary btn-sm" style="border-radius: 5px;">
+                                    <i data-feather="eye"></i> View
+                                </button>
+
+                                <div class="btn-group" role="group">
+                                    <button id="btnGroupDrop{{ file.id }}" type="button" class="btn btn-outline-primary btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" style=" border-radius: 5px;">
+                                        <i data-feather="check"></i> Check
+                                    </button>
+                                    <ul class="dropdown-menu" aria-labelledby="btnGroupDrop{{ file.id }}">
+                                        <li>
+                                            <a class="dropdown-item" href="javascript:void(0);" onclick="checkUVL('{{ file.id }}')">Syntax check</a>
+                                        </li>
+                                        </ul>
+                                </div>
+                                
+                                <div class="btn-group" role="group">
+                                    <button id="btnGroupDropExport{{ file.id }}" type="button" class="btn btn-primary btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" style=" border-radius: 5px;">
+                                        <i data-feather="download"></i> Export
+                                    </button>
+                                    <ul class="dropdown-menu" aria-labelledby="btnGroupDropExport{{ file.id }}">
+                                        <li>
+                                            <a class="dropdown-item" href="{{ url_for('hubfile.download_file', file_id=file.id) }}">
+                                                UVL
+                                            </a>
+                                            <a class="dropdown-item" href="{{ url_for('flamapy.to_glencoe', file_id=file.id) }}">
+                                                Glencoe
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" href="{{ url_for('flamapy.to_cnf', file_id=file.id) }}">
+                                                DIMACS
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" href="{{ url_for('flamapy.to_splot', file_id=file.id) }}">
+                                                SPLOT
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% endfor %}
+        </div>
+        
+        <a href="/dataset/download/{{ dataset.id }}" class="btn btn-primary mt-3" style="border-radius: 5px;">
+>>>>>>> trunk_1
             <i data-feather="download" class="center-button-icon"></i>
             Download Dataset (.zip)
         </a>
@@ -368,6 +577,28 @@
     
 </div>
 
+<<<<<<< HEAD
+=======
+<div class="modal fade" id="fileViewerModal" tabindex="-1" aria-labelledby="fileViewerModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" style="height: 80vh; display: flex; align-items: center;">
+        <div class="modal-content" style="height: 80vh;">
+            <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center;">
+                <h5 class="modal-title" id="fileViewerModalLabel">Feature model view</h5>
+                <div>
+                    <a href="#" class="btn btn-outline-primary btn-sm" id="downloadButton"
+                        style="margin-right: 5px; margin-bottom: 5px; border-radius: 5px;">
+                        <i data-feather="download"></i>
+                    </a>
+                    <button onclick="copyToClipboard()" class="btn btn-outline-secondary btn-sm"
+                        style="margin-right: 5px; margin-bottom: 5px; border-radius: 5px;">
+                        <i data-feather="copy"></i>
+                    </button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+            </div>
+            <div class="modal-body" style="overflow-y: auto; height: calc(100vh - 50px);">
+                <pre id="fileContent" style="height: 100%; overflow-y: auto; white-space: pre-wrap; word-wrap: break-word; background-color: #f5f5f5; padding: 20px; border-radius: 5px; border: 1px solid #ccc;"></pre>
+>>>>>>> trunk_1
 
     <div class="modal fade" id="fileViewerModal" tabindex="-1" aria-labelledby="fileViewerModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg" style="height: 80vh; display: flex; align-items: center;">
@@ -396,12 +627,80 @@
 
     <script type="text/javascript" src="https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js"></script>
 
+<<<<<<< HEAD
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             feather.replace();
         });
 
         var currentFileId;
+=======
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        feather.replace();
+        setupCommentForm(); 
+    });
+
+    var currentFileId;
+
+    function viewFile(fileId) {
+        fetch(`/file/view/${fileId}`)
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('fileContent').textContent = data.content;
+                currentFileId = fileId;
+                document.getElementById('downloadButton').href = `/file/download/${fileId}`;
+                var modal = new bootstrap.Modal(document.getElementById('fileViewerModal'));
+                modal.show();
+            })
+            .catch(error => console.error('Error loading file:', error));
+    }
+
+    function showLoading() {
+        document.getElementById("loading").style.display = "initial";
+    }
+
+    function hideLoading() {
+        document.getElementById("loading").style.display = "none";
+    }
+
+    function checkUVL(file_id) {
+        const outputDiv = document.getElementById('check_' + file_id);
+        outputDiv.innerHTML = ''; 
+
+        fetch(`/flamapy/check_uvl/${file_id}`)
+            .then(response => {
+                return response.json().then(data => ({
+                    status: response.status,
+                    data
+                }));
+            })
+            .then(({ status, data }) => {
+                if (status === 400) {
+                    if (data.errors) {
+                        outputDiv.innerHTML = '<span class="badge bg-danger">Errors:</span>';
+                        data.errors.forEach(error => {
+                            const errorElement = document.createElement('span');
+                            errorElement.className = 'badge bg-danger';
+                            errorElement.textContent = error;
+                            outputDiv.appendChild(errorElement);
+                            outputDiv.appendChild(document.createElement('br')); 
+                        });
+                    } else {
+                        outputDiv.innerHTML = `<span class="badge bg-danger">Error: ${data.error}</span>`;
+                    }
+                } else if (status === 200) {
+                    outputDiv.innerHTML = '<span class="badge bg-success">Valid Model</span>';
+                } else {
+                    outputDiv.innerHTML = `<span class="badge bg-warning">Unexpected response status: ${status}</span>`;
+                }
+            })
+            .catch(error => {
+                outputDiv.innerHTML = `<span class="badge bg-danger">An unexpected error occurred: ${error.message}</span>`;
+            });
+    }
+>>>>>>> trunk_1
 
         function viewFile(fileId) {
             fetch(`/file/view/${fileId}`)
@@ -415,6 +714,7 @@
                 })
                 .catch(error => console.error('Error loading file:', error));
         }
+<<<<<<< HEAD
 
 <<<<<<< HEAD
         function copyToClipboard() {
@@ -436,12 +736,38 @@
         feather.replace();
         setupCommentForm();
     });
+=======
+    }
+    */
+    
+    function copyToClipboard() {
+        const text = document.getElementById('fileContent').textContent;
+        copyTextFallback(text);
+    }
 
-    // ... (otras funciones como viewFile, checkUVL, etc.)
+    function copyText(elementId) {
+        const text = document.getElementById(elementId).innerText;
+        copyTextFallback(text);
+    }
+    
+    function copyTextFallback(text) {
+         try {
+             const textArea = document.createElement('textarea');
+             textArea.value = text;
+             textArea.style.position = 'fixed'; 
+             textArea.style.opacity = 0;
+             document.body.appendChild(textArea);
+             textArea.select();
+             document.execCommand('copy');
+             document.body.removeChild(textArea);
+             console.log('Text copied to clipboard (execCommand): ' + text);
+         } catch (err) {
+             console.error('Failed to copy text (execCommand): ', err);
+         }
+    }
+>>>>>>> trunk_1
 
-    // ===============================================================
-    // LÓGICA DE COMENTARIOS
-    // ===============================================================
+
 
     function setupCommentForm() {
         const form = document.getElementById('comment-form');
@@ -454,21 +780,17 @@
             
             const url = form.action;
             const content = contentInput.value;
-            const parent_id = parentIdInput.value; // Será '' o un ID de string
+            const parent_id = parentIdInput.value; 
 
-            // Si el contenido está vacío, no hacemos nada
             if (content.trim() === '') {
                 return;
             }
 
-            // Simple AJAX POST request
             fetch(url, {
                 method: 'POST',
                 headers: {
-                    // Especificamos que estamos enviando JSON (CORRECTO)
                     'Content-Type': 'application/json',
                 },
-                // Convertimos los datos a una cadena JSON (CORRECTO)
                 body: JSON.stringify({ 
                     'content': content,
                     'parent_id': parent_id
@@ -476,36 +798,27 @@
             })
             .then(response => {
                 if (!response.ok) {
-                    // Si el backend devuelve un 400 o 500, lanzamos error para entrar al catch
                     throw new Error(`Server error: ${response.status}`);
                 }
                 return response.json();
             })
             .then(commentData => {
-                // 1. Añadir el nuevo comentario al DOM
                 const newCommentHtml = renderNewComment(commentData);
 
                 if (commentData.parent_id) {
-                    // Si es una respuesta, añadirla al contenedor del comentario padre
                     const parentDiv = document.getElementById(`comment-${commentData.parent_id}`);
                     if (parentDiv) {
-                        // Si el comentario padre existe, insertamos la respuesta al final
                         parentDiv.insertAdjacentHTML('beforeend', newCommentHtml);
                     }
                 } else {
-                    // Si es comentario principal, añadirlo al final de la lista de comentarios
                     commentsSection.insertAdjacentHTML('beforeend', newCommentHtml);
                 }
 
-                // 2. Limpiar formulario y resetear el estado de "Reply"
                 contentInput.value = '';
-                
-                // --- AJUSTE CLAVE: Resetear el estado de respuesta ---
-                parentIdInput.value = ''; // Resetear el ID del padre a vacío
-                contentInput.placeholder = 'Write down your comment below...'; // Resetear el placeholder
-                // --- FIN AJUSTE ---
+                parentIdInput.value = ''; 
+                contentInput.placeholder = 'Write down your comment below...'; 
 
-                feather.replace(); // Recargar iconos Feather si es necesario
+                feather.replace(); 
             })
             .catch(error => {
                 console.error('Error al enviar el comentario:', error);
@@ -514,9 +827,6 @@
         });
     }
 
-    /**
-     * Muestra el formulario de comentario preparado para responder.
-     */
     function showReplyForm(parent_id, author_name) {
         const contentInput = document.getElementById('comment-content');
         const parentIdInput = document.getElementById('comment-parent-id');
@@ -524,13 +834,9 @@
         parentIdInput.value = parent_id;
         contentInput.placeholder = `Replying to ${author_name}...`;
         contentInput.focus();
-        // Opcional: Desplazarse al formulario
         document.getElementById('comment-form').scrollIntoView({ behavior: 'smooth' });
     }
     
-    /**
-     * Envía una petición DELETE para eliminar un comentario (Soft Delete).
-     */
     function deleteComment(comment_id) {
         if (!confirm('Are you sure you want to delete this comment?')) {
             return;
@@ -538,12 +844,9 @@
 
         fetch(`/comments/${comment_id}`, {
             method: 'DELETE',
-            // Headers necesarios si utilizas un token CSRF global, 
-            // pero el Flask-WTF CSRF en Flask no lo requiere para DELETE simples por defecto.
         })
         .then(response => {
             if (response.status === 200) {
-                // Eliminar el comentario del DOM si el borrado fue exitoso
                 const commentElement = document.getElementById(`comment-${comment_id}`);
                 if (commentElement) {
                     commentElement.remove();
@@ -561,18 +864,11 @@
         });
     }
 
-    /**
-     * Función helper para crear el HTML del nuevo comentario (simplificado).
-     */
     function renderNewComment(commentData) {
-        // Usamos la fecha real devuelta por el backend, formateada en JS
         const timestamp = new Date(commentData.created_at).toLocaleString(); 
-        
         let html;
 
-        // Comprobamos si el comentario es una RESPUESTA (tiene parent_id)
         if (commentData.parent_id) {
-            // HTML para RESPUESTAS: se añade la indentación (ms-4) y no incluye botones de Delete/Reply.
             html = `
                 <div class="reply-item ms-4 border-start ps-3 pt-2" id="comment-${commentData.id}">
                     <p class="mb-0">
@@ -583,7 +879,7 @@
                 </div>
             `;
         } else {
-            // HTML para COMENTARIOS PRINCIPALES: incluye botones y el ID como cadena para JS.
+ç
             html = `
                 <div class="comment-item border-start border-3 ps-3 mb-3" id="comment-${commentData.id}">
                     <p class="mb-0">
@@ -594,8 +890,7 @@
                     
                     <div class="comment-actions mb-2">
                         <button class="btn btn-secondary btn-sm" onclick="showReplyForm('${commentData.id}', '${commentData.author_name}')" type="button">Reply</button>
-                        
-                        </div>
+                    </div>
                 </div>
             `;
         }
@@ -605,7 +900,11 @@
 
 </script>
 
+<<<<<<< HEAD
 =======
 >>>>>>> origin/trunk
 {% endblock %}
 >>>>>>> 60e60f3715d5b2d66af5f212768c480611e6dcdb
+=======
+{% endblock %}
+>>>>>>> trunk_1
