@@ -85,6 +85,12 @@ def upgrade():
     sa.Column('affiliation', sa.String(length=100), nullable=True),
     sa.Column('name', sa.String(length=100), nullable=False),
     sa.Column('surname', sa.String(length=100), nullable=False),
+<<<<<<< HEAD
+    sa.Column('twofa_enabled', sa.Boolean(), default=False),
+    sa.Column('twofa_secret', sa.Text(), nullable=False),
+    sa.Column('twofa_confirmed', sa.Boolean(), default=False),
+=======
+>>>>>>> origin/trunk
     sa.ForeignKeyConstraint(['user_id'], ['user.id'], ),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('user_id')

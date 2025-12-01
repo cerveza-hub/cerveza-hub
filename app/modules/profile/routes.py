@@ -1,7 +1,21 @@
+<<<<<<< HEAD
+import base64
+import io
+
+# Para 2FA
+import pyotp
+import qrcode
+from flask import flash, redirect, render_template, request, url_for
+from flask_login import current_user, login_required
+
+from app import db
+from app.modules.auth.models import User
+=======
 from flask import redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 
 from app import db
+>>>>>>> origin/trunk
 from app.modules.auth.services import AuthenticationService
 from app.modules.dataset.models import DataSet
 from app.modules.profile import profile_bp
@@ -13,7 +27,11 @@ from app.modules.profile.services import UserProfileService
 @login_required
 def edit_profile():
     auth_service = AuthenticationService()
+<<<<<<< HEAD
+    profile = auth_service.get_authenticated_user_profile()
+=======
     profile = auth_service.get_authenticated_user_profile
+>>>>>>> origin/trunk
     if not profile:
         return redirect(url_for("public.index"))
 
@@ -28,6 +46,8 @@ def edit_profile():
     return render_template("profile/edit.html", form=form)
 
 
+<<<<<<< HEAD
+=======
 @profile_bp.route("/profile/manage_account", methods=["GET", "POST"])
 @login_required
 def manage_account():
@@ -46,6 +66,7 @@ def manage_account():
         )
     return render_template("profile/manage_account.html", form=form)
 
+>>>>>>> origin/trunk
 @profile_bp.route("/profile/summary")
 @login_required
 def my_profile():
@@ -71,3 +92,98 @@ def my_profile():
         pagination=user_datasets_pagination,
         total_datasets=total_datasets_count,
     )
+<<<<<<< HEAD
+
+
+# Ruta para habilitar el 2FA
+@profile_bp.route("/profile/enable-2fa", methods=["GET"])
+@login_required
+def enable_2fa():
+    profile = current_user.profile
+    if not profile:
+        flash("User profile not found.", "error")
+        return redirect(url_for("profile.my_profile"))
+
+    # Generar el código secreto TOTP (de un solo uso)
+    secret = pyotp.random_base32()
+    profile.set_twofa_secret(secret)
+    db.session.commit()
+
+    # Crear URI compatible con Google Authenticator
+    issuer_name = "CervezaHub"
+    uri = pyotp.totp.TOTP(secret).provisioning_uri(name=current_user.email, issuer_name=issuer_name)
+
+    # Generar el QR para escanear y confugurar en la app de autenticación
+    qr = qrcode.make(uri)
+    buffer = io.BytesIO()
+    qr.save(buffer, format="PNG")
+    qr_b64 = base64.b64encode(buffer.getvalue()).decode()
+
+    # Se muestra el QR para escanear
+    return render_template("profile/enable_2fa.html", qr_code=qr_b64, secret=secret)
+
+
+# Ruta para verificar el 2FA tras escanear el QR
+@profile_bp.route("/profile/verify-2fa", methods=["POST"])
+@login_required
+def verify_2fa():
+    token = request.form.get("token")
+    profile = current_user.profile
+    secret = profile.get_twofa_secret()
+
+    if not secret:
+        flash("No se encontró el secreto de configuración. Vuelve a generarlo.", "error")
+        return redirect(url_for("profile.enable_2fa"))
+
+    totp = pyotp.TOTP(secret)
+    if totp.verify(token):
+        profile.twofa_enabled = True
+        profile.twofa_confirmed = True
+        profile.save()
+        flash("Autenticación en dos pasos activada correctamente.", "success")
+        return redirect(url_for("profile.my_profile"))
+    else:
+        flash("Código incorrecto. Inténtalo de nuevo.", "error")
+        return redirect(url_for("profile.enable_2fa"))
+
+
+# Ruta para deshabilitar el 2FA
+@profile_bp.route("/profile/disable-2fa")
+@login_required
+def disable_2fa():
+    profile = current_user.profile
+    profile.twofa_enabled = False
+    profile.twofa_confirmed = False
+    profile.twofa_secret = None
+    profile.save()
+    flash("Autenticación en dos pasos desactivada.", "success")
+    return redirect(url_for("profile.my_profile"))
+
+
+@profile_bp.route("/profile/<int:user_id>")
+def public_profile(user_id):
+    page = request.args.get("page", 1, type=int)
+    per_page = 5
+
+    user = db.session.query(User).filter_by(id=user_id).first_or_404()
+    user_profile = user.profile
+
+    user_datasets_pagination = (
+        db.session.query(DataSet)
+        .filter(DataSet.user_id == user.id)
+        .order_by(DataSet.created_at.desc())
+        .paginate(page=page, per_page=per_page, error_out=False)
+    )
+
+    total_datasets_count = db.session.query(DataSet).filter(DataSet.user_id == user.id).count()
+
+    return render_template(
+        "profile/summary.html",
+        user_profile=user_profile,
+        user=user,
+        datasets=user_datasets_pagination.items,
+        pagination=user_datasets_pagination,
+        total_datasets=total_datasets_count,
+    )
+=======
+>>>>>>> origin/trunk

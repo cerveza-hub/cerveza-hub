@@ -7,10 +7,18 @@
 name: Python Lint
 
 on:
+<<<<<<< HEAD
+  push:
+    branches:
+      - 'feature_task_*'   # Se ejecuta en cualquier rama de feature
+      - 'trunk'            # También en trunk para validación final
+      - 'main'             # Ahora también en main
+=======
   # Trigger on every push to any branch
   push:
   # Trigger on every pull request (opened, updated, or synchronized)
   pull_request:
+>>>>>>> origin/trunk
 
 jobs:
   lint:

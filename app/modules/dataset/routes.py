@@ -4,8 +4,15 @@ import os
 import shutil
 import tempfile
 import uuid
+<<<<<<< HEAD
 import pandas as pd
+=======
+<<<<<<< HEAD
+from datetime import datetime, timezone
+=======
+>>>>>>> 60e60f3715d5b2d66af5f212768c480611e6dcdb
 from datetime import datetime, timezone, timedelta
+>>>>>>> origin/trunk
 from zipfile import ZipFile
 from werkzeug.utils import secure_filename
 
@@ -18,6 +25,15 @@ from flask import (
     request,
     send_from_directory,
     url_for,
+<<<<<<< HEAD
+)
+from flask_login import current_user, login_required
+
+from app.modules.comment.services import CommentService
+from app.modules.dataset import dataset_bp
+from app.modules.dataset.forms import DataSetForm
+from app.modules.dataset.models import DSDownloadRecord
+=======
     flash,
     current_app,
 )
@@ -26,7 +42,12 @@ from flask_login import current_user, login_required
 from app.modules.dataset import dataset_bp
 from app import db
 from app.modules.dataset.forms import DataSetForm, CommunityForm, CommunityDatasetForm
+<<<<<<< HEAD
 from app.modules.dataset.models import DSDownloadRecord, DSMetaData, DataSet, DSViewRecord, Author
+=======
+from app.modules.dataset.models import DSDownloadRecord, DataSet, DSViewRecord
+>>>>>>> origin/trunk
+>>>>>>> 60e60f3715d5b2d66af5f212768c480611e6dcdb
 from app.modules.dataset.services import (
     AuthorService,
     DataSetService,
@@ -34,7 +55,10 @@ from app.modules.dataset.services import (
     DSDownloadRecordService,
     DSMetaDataService,
     DSViewRecordService,
+<<<<<<< HEAD
+=======
     CommunityService,
+>>>>>>> origin/trunk
 )
 from app.modules.zenodo.services import ZenodoService
 
@@ -47,7 +71,11 @@ dsmetadata_service = DSMetaDataService()
 zenodo_service = ZenodoService()
 doi_mapping_service = DOIMappingService()
 ds_view_record_service = DSViewRecordService()
+<<<<<<< HEAD
+
+=======
 community_service = CommunityService()
+>>>>>>> origin/trunk
 
 
 @dataset_bp.route("/dataset/upload", methods=["GET", "POST"])
@@ -274,6 +302,17 @@ def download_dataset(dataset_id):
             download_date=datetime.now(timezone.utc),
             download_cookie=user_cookie,
         )
+<<<<<<< HEAD
+
+    return resp
+
+
+# AÑADIDO PARA COMMENT
+
+
+@dataset_bp.route("/doi/<path:doi>/", methods=["GET"])
+def subdomain_index(doi):
+=======
         
         try:
             dataset.download_count += 1
@@ -323,6 +362,12 @@ def get_dataset_stats(dataset_id):
 
 @dataset_bp.route("/doi/<path:doi>/", methods=["GET"])
 def subdomain_index(doi):
+<<<<<<< HEAD
+=======
+
+>>>>>>> origin/trunk
+    # Check if the DOI is an old DOI
+>>>>>>> 60e60f3715d5b2d66af5f212768c480611e6dcdb
     new_doi = doi_mapping_service.get_new_doi(doi)
     if new_doi:
         return redirect(url_for("dataset.subdomain_index", doi=new_doi), code=302)
@@ -336,6 +381,7 @@ def subdomain_index(doi):
         logger.error(f"No DataSet found for metadata with DOI {doi}")
         abort(404)
 
+<<<<<<< HEAD
     user_cookie = None 
     try:
         user_cookie = request.cookies.get("view_cookie")
@@ -383,7 +429,35 @@ def subdomain_index(doi):
     
     if user_cookie:
         resp.set_cookie("view_cookie", user_cookie) 
+=======
+<<<<<<< HEAD
+    # --- INICIO DE LOS CAMBIOS PARA COMENTARIOS ---
+    # 1. Obtener los comentarios del dataset
+    # Asegúrate de que 'comment_service' esté inicializado al principio del archivo routes.py
+    comments = comment_service.get_comments_for_dataset(dataset.id)
 
+    # 2. Guardar la cookie de vista al usuario
+    user_cookie = ds_view_record_service.create_cookie(dataset=dataset)
+
+    # 3. Crear la respuesta, pasando los 'comments' al template
+    resp = make_response(
+        render_template(
+            "dataset/view_dataset.html",
+            dataset=dataset,
+            comments=comments,  # <--- Pasamos la lista de comentarios
+        )
+    )
+    # --- FIN DE LOS CAMBIOS PARA COMENTARIOS ---
+
+    resp.set_cookie("view_cookie", user_cookie)
+=======
+    # Save the cookie to the user's browser
+    user_cookie = ds_view_record_service.create_cookie(dataset=dataset)
+    resp = make_response(render_template("dataset/view_dataset.html", dataset=dataset))
+    resp.set_cookie("view_cookie", user_cookie)
+>>>>>>> 60e60f3715d5b2d66af5f212768c480611e6dcdb
+
+>>>>>>> origin/trunk
     return resp
 
 
@@ -449,6 +523,116 @@ def get_unsynchronized_dataset(dataset_id):
     return resp
 
 
+<<<<<<< HEAD
+# AÑADIDO PARA COMMENT
+
+
+comment_service = CommentService()  # Inicializar el servicio
+
+# 1. POST para crear un comentario
+
+
+@dataset_bp.route("/dataset/<int:dataset_id>/comments", methods=["POST"])
+@login_required
+def create_comment_endpoint(dataset_id):
+    """Crea un comentario en un dataset."""
+    # Intentar leer JSON, luego fallback a form data
+    data = request.get_json(silent=True)
+
+    if data:
+        content = data.get("content")
+        parent_id = data.get("parent_id")
+    else:
+        content = request.form.get("content")
+        parent_id = request.form.get("parent_id")
+
+    # --- CAMBIO CLAVE ---
+    # Convertir cadena vacía ('') a None para que SQLAlchemy lo interprete como NULL
+    if parent_id == "":
+        parent_id = None
+    # --- FIN DEL CAMBIO ---
+
+    if not content:
+        return jsonify({"message": "Content is required"}), 400
+
+    try:
+        # Convertir parent_id a entero o None
+        if parent_id is not None:
+            parent_id = int(parent_id)
+
+        comment = comment_service.create_comment(
+            author_id=current_user.id,
+            dataset_id=dataset_id,
+            content=content,
+            parent_id=parent_id,  # None o entero válido
+        )
+        return jsonify(comment.to_dict()), 201
+
+    except Exception as e:
+        logger.exception(f"Error creating comment: {e}")
+        return (
+            jsonify({"message": "Failed to create comment due to server error."}),
+            500,
+        )
+
+
+# 2. GET para listar comentarios
+@dataset_bp.route("/dataset/<int:dataset_id>/comments", methods=["GET"])
+def list_comments_endpoint(dataset_id):
+    """Lista los comentarios asociados a un dataset."""
+    comments = comment_service.get_comments_for_dataset(dataset_id)
+    comments_data = [c.to_dict() for c in comments]
+    return jsonify(comments_data), 200
+
+
+# 3. DELETE para moderar/eliminar (autor del dataset)
+@dataset_bp.route("/comments/<int:comment_id>", methods=["DELETE"])
+@login_required
+def delete_comment_endpoint(comment_id):
+    """Permite eliminar un comentario (solo el autor del dataset)."""
+    comment = comment_service.get_or_404(comment_id)
+    dataset_author_id = comment.data_set.user_id  # Asumiendo que DataSet tiene user_id
+
+    if current_user.id != dataset_author_id:
+        return (
+            jsonify({"message": ("Forbidden. Only the dataset author can delete this comment.")}),
+            403,
+        )
+
+    try:
+        comment_service.delete_comment(comment_id)
+        return jsonify({"message": "Comment deleted successfully"}), 200
+    except Exception:
+        return jsonify({"message": "Failed to delete comment"}), 500
+
+
+@dataset_bp.route("/dataset/ranking", methods=["GET"])
+def ranking():
+    """Muestra la página de rankings de datasets."""
+    return render_template("dataset/ranking.html")
+
+
+@dataset_bp.route("/dataset/ranking/downloads", methods=["GET"])
+def get_most_downloaded_datasets():
+    """Obtiene el ranking de datasets más descargados."""
+    try:
+        ranking = dataset_service.get_most_downloaded_datasets(limit=5)
+        return jsonify(ranking), 200
+    except Exception as e:
+        logger.exception(f"Error getting most downloaded datasets: {e}")
+        return jsonify({"message": "Failed to get ranking"}), 500
+
+
+@dataset_bp.route("/dataset/ranking/views", methods=["GET"])
+def get_most_viewed_datasets():
+    """Obtiene el ranking de datasets más vistos."""
+    try:
+        ranking = dataset_service.get_most_viewed_datasets(limit=5)
+        return jsonify(ranking), 200
+    except Exception as e:
+        logger.exception(f"Error getting most viewed datasets: {e}")
+        return jsonify({"message": "Failed to get ranking"}), 500
+=======
 @dataset_bp.route("/community/create", methods=["GET", "POST"])
 @login_required
 def create_community():
@@ -553,3 +737,7 @@ def manage_community_datasets(community_id):
     return render_template("community/manage_datasets.html", 
                            community=community, 
                            form=form)
+<<<<<<< HEAD
+=======
+>>>>>>> origin/trunk
+>>>>>>> 60e60f3715d5b2d66af5f212768c480611e6dcdb

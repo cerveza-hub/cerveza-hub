@@ -132,5 +132,15 @@ wsproto==1.2.0
 WTForms==3.2.1
 zope.event==5.1.1
 zope.interface==7.2
+<<<<<<< HEAD
 zstandard==0.23.0
 pandas
+=======
+<<<<<<< HEAD
+zstandard==0.23.0
+qrcode[pil]==8.2
+pyotp==2.9.0
+=======
+zstandard==0.23.0
+>>>>>>> origin/trunk
+>>>>>>> 60e60f3715d5b2d66af5f212768c480611e6dcdb

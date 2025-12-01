@@ -2,11 +2,18 @@ import datetime
 import pytest
 from flask import url_for
 
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+=======
+# Nuevas importaciones necesarias para los tests de servicio
+>>>>>>> 60e60f3715d5b2d66af5f212768c480611e6dcdb
 from app import db 
 from app.modules.auth.models import Role, User 
 from unittest.mock import patch, MagicMock
 
 
+>>>>>>> origin/trunk
 from app.modules.auth.repositories import UserRepository
 from app.modules.auth.services import AuthenticationService, send_password_reset_email
 from app.modules.profile.repositories import UserProfileRepository
@@ -81,6 +88,20 @@ def test_signup_user_successful(test_client):
     assert response.request.path == url_for("public.index"), "Signup was unsuccessful"
 
 
+<<<<<<< HEAD
+def test_service_create_with_profie_success(clean_database):
+    data = {"name": "Test", "surname": "Foo", "email": "service_test@example.com", "password": "test1234"}
+
+    AuthenticationService().create_with_profile(**data)
+
+    assert UserRepository().count() == 1
+    assert UserProfileRepository().count() == 1
+
+
+def test_service_create_with_profile_fail_no_email(clean_database):
+    data = {"name": "Test", "surname": "Foo", "email": "", "password": "1234"}
+
+=======
 def test_service_create_with_profile_fail_no_email(clean_database):
     data = {"name": "Test", "surname": "Foo", "email": "", "password": "1234"}
 
@@ -88,6 +109,7 @@ def test_service_create_with_profile_fail_no_email(clean_database):
     db.session.add(role_test)
     db.session.commit()
     
+>>>>>>> origin/trunk
     with pytest.raises(ValueError, match="Email is required."):
         AuthenticationService().create_with_profile(**data)
 
@@ -98,15 +120,20 @@ def test_service_create_with_profile_fail_no_email(clean_database):
 def test_service_create_with_profile_fail_no_password(clean_database):
     data = {"name": "Test", "surname": "Foo", "email": "test@example.com", "password": ""}
 
+<<<<<<< HEAD
+=======
     role_test = Role(id=1, name="user", description="Default user role")
     db.session.add(role_test)
     db.session.commit()
     
+>>>>>>> origin/trunk
     with pytest.raises(ValueError, match="Password is required."):
         AuthenticationService().create_with_profile(**data)
 
     assert UserRepository().count() == 0
     assert UserProfileRepository().count() == 0
+<<<<<<< HEAD
+=======
 
 def test_service_create_with_profie_success(clean_database):
     role_test = Role(id=1, name="user", description="Default user role")
@@ -119,6 +146,7 @@ def test_service_create_with_profie_success(clean_database):
 
     assert UserRepository().count() == 1
     assert UserProfileRepository().count() == 1
+<<<<<<< HEAD
 
 
 
@@ -417,3 +445,6 @@ def test_verify_reset_token_no_expiration(mock_db_session, mock_query, mock_date
     assert mock_user.token_expiration is None
     # Verifica que se hizo commit de la limpieza
     mock_db_session.commit.assert_called_once()
+=======
+>>>>>>> origin/trunk
+>>>>>>> 60e60f3715d5b2d66af5f212768c480611e6dcdb

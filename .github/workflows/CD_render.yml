@@ -1,6 +1,22 @@
 name: Deploy to Render
 
 on:
+<<<<<<< HEAD
+  workflow_run:
+    # Trigger this workflow only after specified workflows complete
+    workflows:
+      - Codacy CI
+      - Python Lint
+    types:
+      - completed
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: Deploy to Render
+    if: github.event.workflow_run.conclusion == 'success' && github.ref == 'refs/heads/main'
+=======
   push:
     branches: [ trunk ]
   workflow_dispatch:
@@ -15,12 +31,21 @@ concurrency:
 jobs:
   deploy:
     name: Deploy to Render (trunk)
+>>>>>>> origin/trunk
     runs-on: ubuntu-latest
 
     steps:
       - name: Check out the repo
         uses: actions/checkout@v4
 
+<<<<<<< HEAD
+      - name: Deploy to Render
+        env:
+          FERNET_KEY: ${{ secrets.FERNET_KEY }}
+          deploy_url: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+        run: |
+          curl "$deploy_url"
+=======
       - name: Set Render deploy hook (trunk)
         run: |
           if [ -z "${{ secrets.RENDER_DEPLOY_HOOK_URL_TRUNK }}" ]; then
@@ -73,3 +98,4 @@ jobs:
             echo "Falta DEPLOY_HOOK_URL"; exit 1
           fi
           curl -fsS -X POST "$DEPLOY_HOOK_URL"
+>>>>>>> origin/trunk
