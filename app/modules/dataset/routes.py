@@ -57,11 +57,7 @@ zenodo_service = ZenodoService()
 doi_mapping_service = DOIMappingService()
 ds_view_record_service = DSViewRecordService()
 
-
 community_service = CommunityService()
-
-comment_service = CommentService()
-
 
 
 @dataset_bp.route("/dataset/upload", methods=["GET", "POST"])
@@ -75,7 +71,7 @@ def create_dataset():
         upload_to_zenodo = request.form.get('upload_to_zenodo') == 'true'
         
         try:
-            # 1. Lectura robusta del CSV con Pandas para obtener metadatos.
+            # --- FIX HERE: robust CSV reading ---
             f.seek(0) 
             try:
                 df = pd.read_csv(f, encoding='utf-8', sep=None, engine='python')
@@ -88,7 +84,6 @@ def create_dataset():
             
             f.seek(0)
             
-            # 2. Creación de metadatos (DSMetaData) y autores.
             metadata_dict = form.get_dsmetadata()
             meta_data = DSMetaData(**metadata_dict)
             
@@ -96,7 +91,6 @@ def create_dataset():
             for author_data in authors_list:
                 meta_data.authors.append(Author(**author_data))
                 
-            # 3. Creación del objeto DataSet en la BD.
             dataset = DataSet(
                 user_id=current_user.id,
                 ds_meta_data=meta_data,
@@ -106,11 +100,8 @@ def create_dataset():
             
             db.session.add(meta_data)
             db.session.add(dataset)
-            db.session.commit() # Commit para obtener dataset.id
-            
-            # 4. Guardado local del archivo CSV (de HEAD)
-            # Nota: Necesitas importar current_app o definir 'uploads' si no está importada.
-            from flask import current_app
+            db.session.commit() 
+
             upload_folder = current_app.config.get('UPLOAD_FOLDER', 'uploads')
             dataset_folder = os.path.join(
                 upload_folder, 
@@ -124,41 +115,7 @@ def create_dataset():
             dataset.csv_file_path = file_path
             db.session.commit()
             
-            logger.info(f"CSV dataset created locally: {dataset.id}")
-
-            # 5. Sincronización con Zenodo (fakenodo) (de trunk_1)
-            if upload_to_zenodo:
-                data = {}
-                deposition_id = None
-                try:
-                    # Crear deposición en Zenodo (fakenodo)
-                    zenodo_response_json = zenodo_service.create_new_deposition(dataset)
-                    response_data = json.dumps(zenodo_response_json)
-                    data = json.loads(response_data)
-                except Exception as exc:
-                    logger.exception(f"Exception while creating dataset data in Zenodo (fakenodo) {exc}")
-
-                if data.get("id"):
-                    deposition_id = data.get("id")
-                    dataset_service.update_dsmetadata(dataset.ds_meta_data_id, deposition_id=deposition_id)
-                    logger.info(f"Updated dataset {dataset.id} with deposition ID: {deposition_id}")
-
-                    # Publicar deposición y guardar DOI (de trunk_1)
-                    try:
-                        # Asumiendo que create_new_deposition ya sube el archivo o que el archivo se subirá después.
-                        # Para este flujo, se espera que el archivo esté en Zenodo si se pide publicar.
-                        zenodo_response = zenodo_service.publish_deposition(deposition_id)
-                        doi = zenodo_response.get("doi")
-                        if doi:
-                            dataset_service.update_dsmetadata(dataset.ds_meta_data_id, dataset_doi=doi)
-                            logger.info(f"DOI actualizado: {doi}")
-
-                    except Exception as e:
-                        # No es un error crítico si la sincronización falla, solo se logea.
-                        logger.error(f"Failed to publish Zenodo deposition or update DOI: {e}")
-                        # El mensaje de error aquí debe ser menos intrusivo si el dataset se creó localmente.
-                        # flash(f"Dataset created locally, but failed to synchronize with Zenodo: {e}", "warning")
-
+            logger.info(f"CSV dataset created: {dataset.id}")
 
         except Exception as exc:
             db.session.rollback()
@@ -166,19 +123,54 @@ def create_dataset():
             flash(f"Error creating local dataset: {exc}", "danger")
             return render_template("dataset/upload_dataset.html", form=form)
 
-        # 6. Redirección final
+        
+        deposition_doi = None 
+        if upload_to_zenodo:
+            try:
+                zenodo_response_json = zenodo_service.create_new_deposition(dataset)
+                data = json.loads(json.dumps(zenodo_response_json))
+                if data.get("conceptrecid") and data.get("id"):
+                    deposition_id = data.get("id")
+                    dataset_service.update_dsmetadata(dataset.ds_meta_data_id, deposition_id=deposition_id)
+                    logger.info(f"Uploading {file_path} to Zenodo (Deposition ID: {deposition_id})...")
+                    zenodo_service.upload_file(dataset, deposition_id, file_path, filename)
+                    zenodo_service.publish_deposition(deposition_id)
+
+                    deposition_doi = zenodo_service.get_doi(deposition_id)
+                    if deposition_doi:
+                        dataset_service.update_dsmetadata(dataset.ds_meta_data_id, dataset_doi=deposition_doi)
+                        logger.info(f"Dataset {dataset.id} published on Zenodo with DOI {deposition_doi}")
+                        flash('Your Beer-Dataset has been uploaded and published on Zenodo!', 'success')
+                    else:
+                        logger.error(f"DOI not found after publishing deposition {deposition_id} for dataset {dataset.id}")
+                        flash('Dataset created locally, but DOI retrieval from Zenodo failed.', 'warning')
+                else:
+                    logger.error(f"Zenodo deposition creation failed for dataset {dataset.id}: {data}")
+                    flash('Dataset created locally, but connection with Zenodo failed.', 'warning')        
+            except Exception as exc:
+                msg = f"Dataset created locally (id: {dataset.id}), but Zenodo synchronization failed: {exc}"
+                logger.exception(msg)
+                flash(msg, 'warning')
+
+                # --- INYECCIÓN DEL DOI SIMULADO ---
+                temp_id = str(uuid.uuid4()).split('-')[0]
+                deposition_doi = f"10.9999/test-doi.{dataset.id}.{temp_id}"
+                dataset_service.update_dsmetadata(dataset.ds_meta_data_id, dataset_doi=deposition_doi)
+                db.session.commit()
+                logger.warning(f"ZENODO FAILED (403). Using SIMULATED DOI: {deposition_doi}")
+
         db.session.refresh(dataset.ds_meta_data)
         final_doi = dataset.ds_meta_data.dataset_doi
 
         if final_doi:
             doi_only = final_doi.replace("https://doi.org/", "")
-            flash("Dataset created and synchronized with Zenodo.", "success")
             return redirect(url_for('dataset.subdomain_index', doi=doi_only))
         else:
-            flash("Dataset created successfully, but not synchronized with Zenodo.", "warning")
-            return redirect(url_for('dataset.get_unsynchronized_dataset', dataset_id=dataset.id))
+             return redirect(url_for('dataset.get_unsynchronized_dataset', dataset_id=dataset.id))
         
     return render_template("dataset/upload_dataset.html", form=form)
+
+
 @dataset_bp.route("/dataset/list", methods=["GET", "POST"])
 @login_required
 def list_dataset():
@@ -227,7 +219,6 @@ def upload():
 
 
 @dataset_bp.route("/dataset/file/delete", methods=["POST"])
-@login_required
 def delete():
     data = request.get_json()
     filename = data.get("file")
@@ -248,22 +239,18 @@ def download_dataset(dataset_id):
     if not dataset.csv_file_path or not os.path.exists(dataset.csv_file_path):
         flash("Error: CSV file for this dataset not found.", "danger")
         try:
-            # Intenta redirigir al DOI si existe
             doi_only = dataset.ds_meta_data.dataset_doi.replace("https://doi.org/", "")
             return redirect(url_for('dataset.subdomain_index', doi=doi_only))
         except Exception:
-            # Si no hay DOI, redirige a la lista
             return redirect(url_for('dataset.list_dataset'))
 
     temp_dir = tempfile.mkdtemp()
     zip_path = os.path.join(temp_dir, f"dataset_{dataset_id}.zip")
 
     with ZipFile(zip_path, "w") as zipf:
-        # Se usa la lógica de HEAD: escribir solo el archivo CSV.
         filename = os.path.basename(dataset.csv_file_path)
-        zipf.write(dataset.csv_file_path, arcname=filename) 
-    
-    # ... (El resto de la lógica de cookies y creación de DSDownloadRecord es común)
+        zipf.write(dataset.csv_file_path, arcname=filename)
+
     user_cookie = request.cookies.get("download_cookie")
     if not user_cookie:
         user_cookie = str(uuid.uuid4())
@@ -284,7 +271,6 @@ def download_dataset(dataset_id):
             mimetype="application/zip",
         )
 
-    # Registro de descarga
     existing_record = DSDownloadRecord.query.filter_by(
         user_id=current_user.id if current_user.is_authenticated else None,
         dataset_id=dataset_id,
@@ -298,14 +284,11 @@ def download_dataset(dataset_id):
             download_date=datetime.now(timezone.utc),
             download_cookie=user_cookie,
         )
-        
-    # Limpieza del directorio temporal (es una buena práctica)
-    # Nota: shutils.rmtree(temp_dir) debería hacerse después de enviar el archivo, 
-    # pero send_from_directory requiere que el archivo exista cuando se llama.
-    # En entornos de producción, esto se maneja con after_request o tareas asíncronas.
-    # Por simplicidad, se omite aquí, confiando en que el sistema limpiará /tmp.
-    
     return resp
+
+
+# AÑADIDO PARA COMMENT
+
 
 
 
@@ -351,9 +334,7 @@ def get_dataset_stats(dataset_id):
 @dataset_bp.route("/doi/<path:doi>/", methods=["GET"])
 def subdomain_index(doi):
 
-
-
-
+    # 1. Check if the DOI is an old DOI
     new_doi = doi_mapping_service.get_new_doi(doi)
     if new_doi:
         # Si es antiguo, redirigir
@@ -369,8 +350,11 @@ def subdomain_index(doi):
         logger.error(f"No DataSet found for metadata with DOI {doi}")
         abort(404)
 
-
-    user_cookie = None 
+    # 3. Lógica de Incremento del Contador de Descargas (del primer bloque)
+    # ATENCIÓN: Esta lógica de incremento parece ser para las VISITAS, no para las DESCARGAS.
+    # Si esta ruta es para VER el dataset, debería incrementar las VISITAS.
+    # Si es para DESCARGAR, debería estar en una ruta separada (e.g., /download/<path:doi>/).
+    # Asumiendo que quieres el contador aquí por ahora:
     try:
         dataset.download_count += 1
         # Usamos logger.debug/info en lugar de print para mejor manejo de logs
@@ -441,33 +425,6 @@ def subdomain_index(doi):
         resp.set_cookie("view_cookie", user_cookie)
 
     # El return resp finaliza la función.
-
-    user_cookie = ds_view_record_service.create_cookie(dataset=dataset)
-
-    recs_general = dataset_service.get_similar_datasets(target_dataset_id=dataset.id, field_type="full_text_corpus")
-    recs_authors = dataset_service.get_similar_datasets(target_dataset_id=dataset.id, field_type="authors")
-    recs_tags = dataset_service.get_similar_datasets(target_dataset_id=dataset.id, field_type="tags")
-    recs_affiliation = dataset_service.get_similar_datasets(target_dataset_id=dataset.id, field_type="affiliation")
-    comments = comment_service.get_comments_for_dataset(dataset.id)
-
-    resp = make_response(
-        render_template(
-            "dataset/view_dataset.html",
-            dataset=dataset,
-            recs_general=recs_general,
-            recs_authors=recs_authors,
-            recs_tags=recs_tags,
-            recs_affiliation=recs_affiliation,
-            comments=comments,
-        )
-    )
-    resp.set_cookie("view_cookie", user_cookie)
-
-    # Save the cookie to the user's browser
-    user_cookie = ds_view_record_service.create_cookie(dataset=dataset)
-    resp = make_response(render_template("dataset/view_dataset.html", dataset=dataset))
-    resp.set_cookie("view_cookie", user_cookie)
-
     return resp
 
 
@@ -476,11 +433,8 @@ def subdomain_index(doi):
 @dataset_bp.route("/dataset/unsynchronized/<int:dataset_id>/", methods=["GET"])
 @login_required
 def get_unsynchronized_dataset(dataset_id):
-   """Muestra un dataset local (no sincronizado) del usuario actual."""
-
-    # Get dataset
-    dataset = dataset_service.get_unsynchronized_dataset(current_user.id, dataset_id)
-
+    
+    dataset = dataset_service.get_or_404(dataset_id)
     if not dataset:
         abort(404)
         
@@ -535,35 +489,22 @@ def get_unsynchronized_dataset(dataset_id):
     
     if user_cookie: 
         resp.set_cookie("view_cookie", user_cookie)
-        return resp
+    return resp
 
 
 # AÑADIDO PARA COMMENT
 
 
-    comment_service = CommentService()  # Inicializar el servicio
+comment_service = CommentService()  # Inicializar el servicio
 
 # 1. POST para crear un comentario
-
-    recs_general = dataset_service.get_similar_datasets(target_dataset_id=dataset.id, field_type="full_text_corpus")
-    recs_authors = dataset_service.get_similar_datasets(target_dataset_id=dataset.id, field_type="authors")
-    recs_tags = dataset_service.get_similar_datasets(target_dataset_id=dataset.id, field_type="tags")
-    recs_affiliation = dataset_service.get_similar_datasets(target_dataset_id=dataset.id, field_type="affiliation")
-
-    return render_template(
-        "dataset/view_dataset.html",
-        dataset=dataset,
-        recs_general=recs_general,
-        recs_authors=recs_authors,
-        recs_tags=recs_tags,
-        recs_affiliation=recs_affiliation,
-    )
 
 
 @dataset_bp.route("/dataset/<int:dataset_id>/comments", methods=["POST"])
 @login_required
 def create_comment_endpoint(dataset_id):
     """Crea un comentario en un dataset."""
+    # Intentar leer JSON, luego fallback a form data
     data = request.get_json(silent=True)
 
     if data:
@@ -573,8 +514,11 @@ def create_comment_endpoint(dataset_id):
         content = request.form.get("content")
         parent_id = request.form.get("parent_id")
 
+    # --- CAMBIO CLAVE ---
+    # Convertir cadena vacía ('') a None para que SQLAlchemy lo interprete como NULL
     if parent_id == "":
         parent_id = None
+    # --- FIN DEL CAMBIO ---
 
     if not content:
         return jsonify({"message": "Content is required"}), 400
@@ -588,7 +532,7 @@ def create_comment_endpoint(dataset_id):
             author_id=current_user.id,
             dataset_id=dataset_id,
             content=content,
-            parent_id=parent_id,
+            parent_id=parent_id,  # None o entero válido
         )
         return jsonify(comment.to_dict()), 201
 
@@ -600,6 +544,7 @@ def create_comment_endpoint(dataset_id):
         )
 
 
+# 2. GET para listar comentarios
 @dataset_bp.route("/dataset/<int:dataset_id>/comments", methods=["GET"])
 def list_comments_endpoint(dataset_id):
     """Lista los comentarios asociados a un dataset."""
@@ -608,12 +553,13 @@ def list_comments_endpoint(dataset_id):
     return jsonify(comments_data), 200
 
 
+# 3. DELETE para moderar/eliminar (autor del dataset)
 @dataset_bp.route("/comments/<int:comment_id>", methods=["DELETE"])
 @login_required
 def delete_comment_endpoint(comment_id):
     """Permite eliminar un comentario (solo el autor del dataset)."""
     comment = comment_service.get_or_404(comment_id)
-    dataset_author_id = comment.data_set.user_id
+    dataset_author_id = comment.data_set.user_id  # Asumiendo que DataSet tiene user_id
 
     if current_user.id != dataset_author_id:
         return (
@@ -636,7 +582,7 @@ def ranking():
 
 @dataset_bp.route("/dataset/ranking/downloads", methods=["GET"])
 def get_most_downloaded_datasets():
-    """Obtiene el ranking de datasets más descargados (Top 5)."""
+    """Obtiene el ranking de datasets más descargados."""
     try:
         ranking = dataset_service.get_most_downloaded_datasets(limit=5)
         return jsonify(ranking), 200
@@ -647,7 +593,7 @@ def get_most_downloaded_datasets():
 
 @dataset_bp.route("/dataset/ranking/views", methods=["GET"])
 def get_most_viewed_datasets():
-    """Obtiene el ranking de datasets más vistos (Top 5)."""
+    """Obtiene el ranking de datasets más vistos."""
     try:
         ranking = dataset_service.get_most_viewed_datasets(limit=5)
         return jsonify(ranking), 200

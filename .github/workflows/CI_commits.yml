@@ -9,7 +9,7 @@ name: Commits Syntax Checker
 on:
   push:
     branches:
-      - 'feature_*'  # Validación rápida en ramas de desarrollo
+      - 'feature_task_*'  # Validación rápida en ramas de desarrollo
 
 jobs:
   check:

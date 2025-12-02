@@ -10,8 +10,7 @@ name: Pytest
 on:
   push:
     branches:
-      - 'feature_*' # Validación rápida en ramas de desarrollo
-      - 'trunk' 
+      - 'feature_task_*'  # Validación rápida en ramas de desarrollo
 
 jobs:
   pytest:
@@ -67,9 +66,6 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-
-      - name: Descargar Modelos NLTK y spaCy
-        run: python scripts/download_nlp_resources.py
 
       # Step 5: Run the pytest test suite (ignoring Selenium tests)
       - name: Run Tests

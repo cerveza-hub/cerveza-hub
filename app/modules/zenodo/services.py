@@ -1,16 +1,12 @@
 import logging
 import os
-import uuid
 
 import requests
 from dotenv import load_dotenv
 from flask import Response, jsonify
-from flask_login import current_user
 
 from app.modules.dataset.models import DataSet
-from app.modules.featuremodel.models import FeatureModel
 from app.modules.zenodo.repositories import ZenodoRepository
-from core.configuration.configuration import uploads_folder_name
 from core.services.BaseService import BaseService
 
 logger = logging.getLogger(__name__)
@@ -21,9 +17,6 @@ load_dotenv()
 class ZenodoService(BaseService):
 
     def get_zenodo_url(self):
-        fakenodo_url = os.getenv("FAKENODO_URL")
-        if fakenodo_url:
-            return fakenodo_url
 
         FLASK_ENV = os.getenv("FLASK_ENV", "development")
         ZENODO_API_URL = ""
@@ -42,10 +35,10 @@ class ZenodoService(BaseService):
 
     def __init__(self):
         super().__init__(ZenodoRepository())
+        self.ZENODO_ACCESS_TOKEN = self.get_zenodo_access_token()
         self.ZENODO_API_URL = self.get_zenodo_url()
-        self.is_fakenodo = bool(os.getenv("FAKENODO_URL"))
         self.headers = {"Content-Type": "application/json"}
-        self.params = {} if self.is_fakenodo else {"access_token": self.get_zenodo_access_token()}
+        self.params = {"access_token": self.ZENODO_ACCESS_TOKEN}
 
     def test_connection(self) -> bool:
         """
@@ -123,6 +116,7 @@ class ZenodoService(BaseService):
             os.remove(file_path)
 
         return jsonify({"success": success, "messages": messages})
+    
 
     def get_all_depositions(self) -> dict:
         """
@@ -138,11 +132,28 @@ class ZenodoService(BaseService):
 
     def create_new_deposition(self, dataset: DataSet) -> dict:
         """
-        Create a new deposition in Zenodo or Fakenodo.
+        Create a new deposition in Zenodo.
+
+        Args:
+            dataset (DataSet): The DataSet object containing the metadata of the deposition.
+
+        Returns:
+            dict: The response in JSON format with the details of the created deposition.
         """
-        logger.info("Dataset sending to Zenodo/Fakenodo...")
+
+        logger.info("Dataset sending to Zenodo...")
         logger.info(f"Publication type...{dataset.ds_meta_data.publication_type.value}")
 
+        description_html = f"""
+        <p>{dataset.ds_meta_data.description}</p>
+        <br>
+        <h4>Estadísticas del CSV:</h4>
+        <ul>
+            <li><strong>Número de Filas:</strong> {dataset.row_count}</li>
+            <li><strong>Columnas:</strong> {dataset.column_names}</li>
+        </ul>
+        """
+        
         metadata = {
             "title": dataset.ds_meta_data.title,
             "upload_type": "dataset" if dataset.ds_meta_data.publication_type.value == "none" else "publication",
@@ -151,78 +162,81 @@ class ZenodoService(BaseService):
                 if dataset.ds_meta_data.publication_type.value != "none"
                 else None
             ),
-            "description": dataset.ds_meta_data.description,
-            "creators": [{"name": author.name} for author in dataset.ds_meta_data.authors],
+            "description": description_html,    
+            "creators": [
+                {
+                    "name": author.name,
+                    **({"affiliation": author.affiliation} if author.affiliation else {}),
+                    **({"orcid": author.orcid} if author.orcid else {}),
+                }
+                for author in dataset.ds_meta_data.authors
+            ],
             "keywords": (
-                ["uvlhub"] if not dataset.ds_meta_data.tags else dataset.ds_meta_data.tags.split(", ") + ["uvlhub"]
+                ["cervezahub", "csv"] if not dataset.ds_meta_data.tags else dataset.ds_meta_data.tags.split(", ") + ["cervezahub", "csv"]
             ),
             "access_right": "open",
             "license": "CC-BY-4.0",
         }
 
-        if self.is_fakenodo:
-            data = {"meta": metadata}
-            response = requests.post(self.ZENODO_API_URL, json=data, headers=self.headers)
-        else:
-            data = {"metadata": metadata}
-            response = requests.post(self.ZENODO_API_URL, params=self.params, json=data, headers=self.headers)
+        data = {"metadata": metadata}
 
-        if response.status_code not in (200, 201):
-            raise Exception(f"Failed to create deposition. Error details: {response.text}")
-        return response.json()
-
-    def upload_file(self, dataset: DataSet, deposition_id: int, feature_model: FeatureModel, user=None) -> dict:
-        """
-        Upload a file to a deposition in Zenodo or simulate it in Fakenodo.
-        """
-        uvl_filename = feature_model.fm_meta_data.uvl_filename
-        user_id = current_user.id if user is None else user.id
-        file_path = os.path.join(uploads_folder_name(), f"user_{str(user_id)}", f"dataset_{dataset.id}/", uvl_filename)
-
-        if self.is_fakenodo:
-            # Simulación: no existe /files en fakenodo, devolvemos respuesta simulada
-            return {
-                "id": deposition_id,
-                "doi": f"10.9999/fakenodo.{uuid.uuid4().hex[:6]}",
-                "published": True,
-                "meta": {
-                    "title": dataset.ds_meta_data.title,
-                    "description": dataset.ds_meta_data.description,
-                },
-                "files": [uvl_filename],
-            }
-
-        # --- Zenodo real ---
-        data = {"name": uvl_filename}
-        files = {"file": open(file_path, "rb")}
-        publish_url = f"{self.ZENODO_API_URL}/{deposition_id}/files"
-
-        response = requests.post(publish_url, params=self.params, data=data, files=files)
-        files["file"].close()
-
+        response = requests.post(self.ZENODO_API_URL, params=self.params, json=data, headers=self.headers)
         if response.status_code != 201:
-            error_message = f"Failed to upload files. Error details: {response.json()}"
+            error_message = f"Failed to create deposition. Error details: {response.json()}"
             raise Exception(error_message)
         return response.json()
 
+    def upload_file(self, dataset: DataSet, deposition_id: int, file_path: str, filename: str) -> dict:
+        """
+        Upload a single CSV file to a Zenodo repository.
+
+        Args:
+        dataset (DataSet): The dataset to which the file belongs.
+        deposition_id (int): The ID of the repository in Zenodo.
+        file_path (str): The *full* path to the file on disk (e.g., /app/uploads/user_1/dataset_1/cervezas.csv).
+        filename (str): The name the file will have in Zenodo (e.g., cervezas.csv).
+        
+        Returns:
+        dict: The response in JSON format with the details of the uploaded file.
+        """
+        
+        data = {"name": filename}
+
+        try:
+            files = {"file": open(file_path, "rb")}
+        except FileNotFoundError:
+            error_message = f"Fallo al subir a Zenodo: El archivo no se encontró en {file_path}"
+            logger.exception(error_message)
+            raise Exception(error_message)
+
+        publish_url = f"{self.ZENODO_API_URL}/{deposition_id}/files"
+        
+        try:
+            response = requests.post(publish_url, params=self.params, data=data, files=files)
+            
+            if response.status_code != 201:
+                error_message = f"Fallo al subir archivos a Zenodo. Detalles: {response.json()}"
+                raise Exception(error_message)
+                
+            return response.json()
+            
+        finally:
+            files["file"].close()
+
     def publish_deposition(self, deposition_id: int) -> dict:
         """
-        Publish a deposition in Zenodo or Fakenodo.
-        """
-        if self.is_fakenodo:
-            # Simulación: devolvemos directamente DOI y published
-            return {
-                "id": deposition_id,
-                "doi": f"10.9999/fakenodo.{uuid.uuid4().hex[:6]}",
-                "published": True,
-            }
+        Publish a deposition in Zenodo.
 
-        # --- Zenodo real ---
+        Args:
+            deposition_id (int): The ID of the deposition in Zenodo.
+
+        Returns:
+            dict: The response in JSON format with the details of the published deposition.
+        """
         publish_url = f"{self.ZENODO_API_URL}/{deposition_id}/actions/publish"
         response = requests.post(publish_url, params=self.params, headers=self.headers)
-
-        if response.status_code not in (200, 202):
-            raise Exception(f"Failed to publish deposition. Error: {response.text}")
+        if response.status_code != 202:
+            raise Exception("Failed to publish deposition")
         return response.json()
 
     def get_deposition(self, deposition_id: int) -> dict:
@@ -235,15 +249,6 @@ class ZenodoService(BaseService):
         Returns:
             dict: The response in JSON format with the details of the deposition.
         """
-        if self.is_fakenodo:
-            # Simulación: devolver un depósito publicado con DOI
-            return {
-                "id": deposition_id,
-                "doi": f"10.9999/fakenodo.{uuid.uuid4().hex[:6]}",
-                "published": True,
-                "meta": {"title": "Simulated dataset", "description": "Stored in fakenodo"},
-            }
-
         deposition_url = f"{self.ZENODO_API_URL}/{deposition_id}"
         response = requests.get(deposition_url, params=self.params, headers=self.headers)
         if response.status_code != 200:

@@ -1,18 +1,30 @@
+<<<<<<< HEAD
 name: Codacy CI
 
 on:
   push:
     branches:
-      - 'feature_*'   # Se ejecuta en cualquier rama de feature
+      - 'feature_task_*'   # Se ejecuta en cualquier rama de feature
       - 'trunk'            # También en trunk para validación final
       - 'main'             # Ahora también en main
 
 jobs:
   build:
+=======
+name: test-and-coverage
+
+on:
+  push:
+    branches: [ trunk ]
+
+jobs:
+  test-and-coverage:
+>>>>>>> origin/trunk
     runs-on: ubuntu-latest
 
     services:
       mysql:
+<<<<<<< HEAD
         image: mysql:5.7
         env:
           MYSQL_ROOT_PASSWORD: uvlhub_root_password
@@ -39,14 +51,46 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
+=======
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: default_db
+          MYSQL_USER: default_user
+          MYSQL_PASSWORD: default_password
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+    env:
+      DB_USER: default_user
+      DB_PASSWORD: default_password
+      DB_NAME: default_db
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
+      DATABASE_URL: mysql+pymysql://default_user:default_password@127.0.0.1:3306/default_db
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+>>>>>>> origin/trunk
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-      
-      - name: Descargar Modelos NLTK y spaCy
-        run: python scripts/download_nlp_resources.py
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
 
       - name: Security audit with pip-audit
         run: |
@@ -67,4 +111,35 @@ jobs:
           MARIADB_TEST_DATABASE: uvlhubdb_test
           MARIADB_USER: uvlhub_user
           MARIADB_PASSWORD: uvlhub_password
+=======
+          # Si tienes otro fichero (requirements-dev.txt, etc.), añádelo aquí
+>>>>>>> 60e60f3715d5b2d66af5f212768c480611e6dcdb
+
+      - name: Wait for MySQL
+        run: |
+          for i in {1..30}; do
+            if mysqladmin ping -h127.0.0.1 -uroot -proot --silent; then
+              echo "MySQL is up"
+              break
+            fi
+            echo "Waiting for MySQL..."
+            sleep 2
+          done
+
+      - name: Run tests with coverage (skip Selenium always)
+        run: |
+          pytest --cov=app --cov-report=xml \
+            -k "not selenium" \
+            --ignore=tests/selenium \
+            --ignore-glob="*selenium*" \
+            --ignore-glob="*Selenium*" \
+            --ignore-glob="*SELENIUM*"
+
+      - name: Upload coverage to Codacy
+        if: always()
+        run: |
+          pip install codacy-coverage
+          python-codacy-coverage -r coverage.xml
+        env:
+>>>>>>> origin/trunk
           CODACY_PROJECT_TOKEN: ${{ secrets.CODACY_PROJECT_TOKEN }}
