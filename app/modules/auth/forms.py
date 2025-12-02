@@ -1,10 +1,6 @@
 from flask_wtf import FlaskForm
 from wtforms import BooleanField, PasswordField, StringField, SubmitField
-<<<<<<< HEAD
-from wtforms.validators import DataRequired, Email, Length
-=======
 from wtforms.validators import DataRequired, Email, Length, EqualTo
->>>>>>> origin/trunk
 
 
 class SignupForm(FlaskForm):
@@ -20,8 +16,6 @@ class LoginForm(FlaskForm):
     password = PasswordField("Password", validators=[DataRequired()])
     remember_me = BooleanField("Remember me")
     submit = SubmitField("Login")
-<<<<<<< HEAD
-=======
 
 class RequestResetForm(FlaskForm):
     """
@@ -47,4 +41,3 @@ class ResetPasswordForm(FlaskForm):
         validators=[DataRequired(), EqualTo("password", message="Las contraseñas deben coincidir")]
     )
     submit = SubmitField("Recover Password")
->>>>>>> origin/trunk

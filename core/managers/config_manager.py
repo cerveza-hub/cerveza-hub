@@ -7,17 +7,10 @@ class ConfigManager:
         self.app = app
 
     def load_config(self, config_name="development"):
-<<<<<<< HEAD
-        # If config_name is not provided, use the environment variable FLASK_ENV
+
         if config_name is None:
             config_name = os.getenv("FLASK_ENV", "development")
 
-        # Load configuration
-=======
-        if config_name is None:
-            config_name = os.getenv("FLASK_ENV", "development")
-
->>>>>>> origin/trunk
         if config_name == "testing":
             self.app.config.from_object(TestingConfig)
         elif config_name == "production":
@@ -39,8 +32,6 @@ class Config:
     TIMEZONE = "Europe/Madrid"
     TEMPLATES_AUTO_RELOAD = True
     UPLOAD_FOLDER = "uploads"
-<<<<<<< HEAD
-=======
     
     MAIL_SERVER = os.getenv("MAIL_SERVER", "smtp.googlemail.com")
     MAIL_PORT = int(os.getenv("MAIL_PORT", 587))
@@ -51,15 +42,12 @@ class Config:
     
     # AÑADIDO PARA DEBUGGING
     MAIL_DEBUG = os.getenv("MAIL_DEBUG", "False").lower() in ["true", "t", "1"]
->>>>>>> origin/trunk
 
 
 class DevelopmentConfig(Config):
     DEBUG = True
-<<<<<<< HEAD
-=======
+
     MAIL_DEBUG = True
->>>>>>> origin/trunk
 
 
 class TestingConfig(Config):
@@ -76,7 +64,4 @@ class TestingConfig(Config):
 
 class ProductionConfig(Config):
     DEBUG = False
-<<<<<<< HEAD
-=======
     MAIL_DEBUG = False
->>>>>>> origin/trunk

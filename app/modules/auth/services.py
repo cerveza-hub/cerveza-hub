@@ -1,32 +1,23 @@
 import os
-<<<<<<< HEAD
 
-from flask_login import current_user, login_user
 
 from app.modules.auth.models import User
-=======
 import secrets 
 
 from flask_login import current_user, login_user
 
 from app.modules.auth.models import User, Role 
 from app import db 
->>>>>>> origin/trunk
 from app.modules.auth.repositories import UserRepository
 from app.modules.profile.models import UserProfile
 from app.modules.profile.repositories import UserProfileRepository
 from core.configuration.configuration import uploads_folder_name
 from core.services.BaseService import BaseService
-<<<<<<< HEAD
-
-
-class AuthenticationService(BaseService):
-    def __init__(self):
-        super().__init__(UserRepository())
-=======
 from flask import url_for, current_app, render_template
 # Solo necesitamos la clase Message de flask_mail para construir el email
 from flask_mail import Message 
+
+
 
 class AuthenticationService(BaseService):
     
@@ -35,7 +26,6 @@ class AuthenticationService(BaseService):
         # CORRECCIÓN: Cambiado de _init_ a __init__ en la llamada super().
         # Aquí inicializamos BaseService pasándole el repositorio obligatorio.
         super().__init__(repository=UserRepository()) 
->>>>>>> origin/trunk
         self.user_profile_repository = UserProfileRepository()
 
     def login(self, email, password, remember=True):
@@ -64,9 +54,7 @@ class AuthenticationService(BaseService):
             if not surname:
                 raise ValueError("Surname is required.")
 
-<<<<<<< HEAD
-            user_data = {"email": email, "password": password}
-=======
+
             standard_role = self.repository.session.query(Role).filter_by(name='standard user').first()
             role_id = standard_role.id if standard_role else 1
             
@@ -75,7 +63,6 @@ class AuthenticationService(BaseService):
                 "password": password,
                 "role_id": role_id 
             }
->>>>>>> origin/trunk
 
             profile_data = {
                 "name": name,
@@ -98,8 +85,6 @@ class AuthenticationService(BaseService):
 
         return None, form.errors
 
-<<<<<<< HEAD
-=======
     def assign_role_to_user(self, user_id: int, new_role_id: int) -> bool:
         """Asigna un nuevo role_id a un usuario específico."""
         try:
@@ -116,7 +101,6 @@ class AuthenticationService(BaseService):
             raise exc
 
 
->>>>>>> origin/trunk
     def get_authenticated_user(self) -> User | None:
         if current_user.is_authenticated:
             return current_user
@@ -129,8 +113,6 @@ class AuthenticationService(BaseService):
 
     def temp_folder_by_user(self, user: User) -> str:
         return os.path.join(uploads_folder_name(), "temp", str(user.id))
-<<<<<<< HEAD
-=======
     
     def update_user(self, user):
         """
@@ -205,4 +187,3 @@ def send_password_reset_email(user):
             exc_info=True 
         )
         return False
->>>>>>> origin/trunk

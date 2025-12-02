@@ -1,21 +1,17 @@
+from curses import flash
 import json
 import logging
 import os
 import shutil
 import tempfile
 import uuid
-<<<<<<< HEAD
 import pandas as pd
-=======
-<<<<<<< HEAD
-from datetime import datetime, timezone
-=======
->>>>>>> 60e60f3715d5b2d66af5f212768c480611e6dcdb
+
 from datetime import datetime, timezone, timedelta
->>>>>>> origin/trunk
 from zipfile import ZipFile
 from werkzeug.utils import secure_filename
 
+from app.modules import dataset
 from flask import (
     abort,
     jsonify,
@@ -25,7 +21,6 @@ from flask import (
     request,
     send_from_directory,
     url_for,
-<<<<<<< HEAD
 )
 from flask_login import current_user, login_required
 
@@ -33,21 +28,13 @@ from app.modules.comment.services import CommentService
 from app.modules.dataset import dataset_bp
 from app.modules.dataset.forms import DataSetForm
 from app.modules.dataset.models import DSDownloadRecord
-=======
-    flash,
-    current_app,
-)
-from flask_login import current_user, login_required
+
 
 from app.modules.dataset import dataset_bp
 from app import db
 from app.modules.dataset.forms import DataSetForm, CommunityForm, CommunityDatasetForm
-<<<<<<< HEAD
 from app.modules.dataset.models import DSDownloadRecord, DSMetaData, DataSet, DSViewRecord, Author
-=======
-from app.modules.dataset.models import DSDownloadRecord, DataSet, DSViewRecord
->>>>>>> origin/trunk
->>>>>>> 60e60f3715d5b2d66af5f212768c480611e6dcdb
+
 from app.modules.dataset.services import (
     AuthorService,
     DataSetService,
@@ -55,10 +42,8 @@ from app.modules.dataset.services import (
     DSDownloadRecordService,
     DSMetaDataService,
     DSViewRecordService,
-<<<<<<< HEAD
-=======
+
     CommunityService,
->>>>>>> origin/trunk
 )
 from app.modules.zenodo.services import ZenodoService
 
@@ -71,11 +56,8 @@ dsmetadata_service = DSMetaDataService()
 zenodo_service = ZenodoService()
 doi_mapping_service = DOIMappingService()
 ds_view_record_service = DSViewRecordService()
-<<<<<<< HEAD
 
-=======
 community_service = CommunityService()
->>>>>>> origin/trunk
 
 
 @dataset_bp.route("/dataset/upload", methods=["GET", "POST"])
@@ -302,26 +284,12 @@ def download_dataset(dataset_id):
             download_date=datetime.now(timezone.utc),
             download_cookie=user_cookie,
         )
-<<<<<<< HEAD
-
     return resp
 
 
 # AÑADIDO PARA COMMENT
 
 
-@dataset_bp.route("/doi/<path:doi>/", methods=["GET"])
-def subdomain_index(doi):
-=======
-        
-        try:
-            dataset.download_count += 1
-            db.session.commit()
-        except Exception as e:
-            db.session.rollback()
-            print(f"Error incrementing download counter: {e}")
-
-    return resp
 
 
 @dataset_bp.route("/dataset/<int:dataset_id>/stats", methods=["GET"])
@@ -360,18 +328,19 @@ def get_dataset_stats(dataset_id):
     )
 
 
+# Asegúrate de que las importaciones necesarias (uuid, datetime, timezone, os, pd, make_response, render_template, db, logger, etc.)
+# estén disponibles en el archivo donde se encuentra este código.
+
 @dataset_bp.route("/doi/<path:doi>/", methods=["GET"])
 def subdomain_index(doi):
-<<<<<<< HEAD
-=======
 
->>>>>>> origin/trunk
-    # Check if the DOI is an old DOI
->>>>>>> 60e60f3715d5b2d66af5f212768c480611e6dcdb
+    # 1. Check if the DOI is an old DOI
     new_doi = doi_mapping_service.get_new_doi(doi)
     if new_doi:
+        # Si es antiguo, redirigir
         return redirect(url_for("dataset.subdomain_index", doi=new_doi), code=302)
 
+    # 2. Get Metadata and Dataset
     ds_meta_data = dsmetadata_service.filter_by_doi(doi)
     if not ds_meta_data:
         abort(404)
@@ -381,21 +350,39 @@ def subdomain_index(doi):
         logger.error(f"No DataSet found for metadata with DOI {doi}")
         abort(404)
 
-<<<<<<< HEAD
-    user_cookie = None 
+    # 3. Lógica de Incremento del Contador de Descargas (del primer bloque)
+    # ATENCIÓN: Esta lógica de incremento parece ser para las VISITAS, no para las DESCARGAS.
+    # Si esta ruta es para VER el dataset, debería incrementar las VISITAS.
+    # Si es para DESCARGAR, debería estar en una ruta separada (e.g., /download/<path:doi>/).
+    # Asumiendo que quieres el contador aquí por ahora:
     try:
+        dataset.download_count += 1
+        # Usamos logger.debug/info en lugar de print para mejor manejo de logs
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error incrementing download counter for dataset {dataset.id}: {e}")
+        # La vista debe continuar aunque el contador falle.
+
+    # 4. Lógica de Registro de Vistas y Cookie
+    user_cookie = None
+    try:
+        # Intenta obtener la cookie existente
         user_cookie = request.cookies.get("view_cookie")
         if not user_cookie:
+            # Si no existe, genera un nuevo ID
             user_cookie = str(uuid.uuid4())
-        
+
+        # Busca un registro de vista existente para evitar duplicados
         existing_record = DSViewRecord.query.filter_by(
             user_id=current_user.id if current_user.is_authenticated else None,
             dataset_id=dataset.id,
             view_cookie=user_cookie,
         ).first()
 
+        # Si no hay registro existente, crea uno
         if not existing_record:
-            ds_view_record_service.create( 
+            ds_view_record_service.create(
                 user_id=current_user.id if current_user.is_authenticated else None,
                 dataset_id=dataset.id,
                 view_date=datetime.now(timezone.utc),
@@ -404,61 +391,43 @@ def subdomain_index(doi):
     except Exception as e:
         logger.warning(f"Could not save view record for dataset {dataset.id}: {e}")
 
-
+    # 5. Lógica de Vista Previa del CSV
     csv_header = []
     csv_preview = []
     try:
         if dataset.csv_file_path and os.path.exists(dataset.csv_file_path):
+            # ... (restante lógica de lectura de CSV con pandas)
             try:
                 df = pd.read_csv(dataset.csv_file_path, encoding='utf-8', sep=None, engine='python')
             except Exception:
                 df = pd.read_csv(dataset.csv_file_path, encoding='latin-1', sep=None, engine='python')
-            
+
             csv_header = df.columns.tolist()
             csv_preview = df.head(10).values.tolist()
     except Exception as e:
         logger.exception(f"CSV preview generation failed for {dataset.id}: {e}")
-        pass 
-    
-    resp = make_response(render_template(
-        "dataset/view_dataset.html", 
-        dataset=dataset,
-        csv_header=csv_header,   
-        csv_preview=csv_preview   
-    ))
-    
-    if user_cookie:
-        resp.set_cookie("view_cookie", user_cookie) 
-=======
-<<<<<<< HEAD
-    # --- INICIO DE LOS CAMBIOS PARA COMENTARIOS ---
-    # 1. Obtener los comentarios del dataset
-    # Asegúrate de que 'comment_service' esté inicializado al principio del archivo routes.py
+        pass
+
+    # 6. Lógica de Comentarios
     comments = comment_service.get_comments_for_dataset(dataset.id)
 
-    # 2. Guardar la cookie de vista al usuario
-    user_cookie = ds_view_record_service.create_cookie(dataset=dataset)
+    # 7. Renderización y Respuesta
+    resp = make_response(render_template(
+        "dataset/view_dataset.html",
+        dataset=dataset,
+        csv_header=csv_header,
+        csv_preview=csv_preview,
+        comments=comments,
+    ))
 
-    # 3. Crear la respuesta, pasando los 'comments' al template
-    resp = make_response(
-        render_template(
-            "dataset/view_dataset.html",
-            dataset=dataset,
-            comments=comments,  # <--- Pasamos la lista de comentarios
-        )
-    )
-    # --- FIN DE LOS CAMBIOS PARA COMENTARIOS ---
+    # 8. Establece la cookie de vista en la respuesta
+    if user_cookie:
+        resp.set_cookie("view_cookie", user_cookie)
 
-    resp.set_cookie("view_cookie", user_cookie)
-=======
-    # Save the cookie to the user's browser
-    user_cookie = ds_view_record_service.create_cookie(dataset=dataset)
-    resp = make_response(render_template("dataset/view_dataset.html", dataset=dataset))
-    resp.set_cookie("view_cookie", user_cookie)
->>>>>>> 60e60f3715d5b2d66af5f212768c480611e6dcdb
-
->>>>>>> origin/trunk
+    # El return resp finaliza la función.
     return resp
+
+
 
 
 @dataset_bp.route("/dataset/unsynchronized/<int:dataset_id>/", methods=["GET"])
@@ -523,7 +492,6 @@ def get_unsynchronized_dataset(dataset_id):
     return resp
 
 
-<<<<<<< HEAD
 # AÑADIDO PARA COMMENT
 
 
@@ -632,7 +600,8 @@ def get_most_viewed_datasets():
     except Exception as e:
         logger.exception(f"Error getting most viewed datasets: {e}")
         return jsonify({"message": "Failed to get ranking"}), 500
-=======
+    
+
 @dataset_bp.route("/community/create", methods=["GET", "POST"])
 @login_required
 def create_community():
@@ -737,7 +706,3 @@ def manage_community_datasets(community_id):
     return render_template("community/manage_datasets.html", 
                            community=community, 
                            form=form)
-<<<<<<< HEAD
-=======
->>>>>>> origin/trunk
->>>>>>> 60e60f3715d5b2d66af5f212768c480611e6dcdb

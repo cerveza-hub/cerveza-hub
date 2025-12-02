@@ -1,20 +1,12 @@
-<<<<<<< HEAD
 import pyotp  # Para 2FA
 from flask import flash, redirect, render_template, request, session, url_for
 from flask_login import current_user, login_user, logout_user
 
-from app.modules.auth import auth_bp
-from app.modules.auth.forms import LoginForm, SignupForm
-from app.modules.auth.services import AuthenticationService
-=======
 from app.modules.auth.models import User
-from flask import redirect, render_template, request, url_for, flash
-from flask_login import current_user, login_user, logout_user
 
 from app.modules.auth import auth_bp
 from app.modules.auth.forms import LoginForm, SignupForm, RequestResetForm, ResetPasswordForm
 from app.modules.auth.services import AuthenticationService, send_password_reset_email
->>>>>>> origin/trunk
 from app.modules.profile.services import UserProfileService
 
 authentication_service = AuthenticationService()
@@ -51,7 +43,6 @@ def login():
 
     form = LoginForm()
     if request.method == "POST" and form.validate_on_submit():
-<<<<<<< HEAD
         email = form.email.data
         password = form.password.data
 
@@ -70,13 +61,6 @@ def login():
             login_user(user, remember=True)
             return redirect(url_for("public.index"))
 
-=======
-        if authentication_service.login(form.email.data, form.password.data):
-            return redirect(url_for("public.index"))
-
-        return render_template("auth/login_form.html", form=form, error="Invalid credentials")
-
->>>>>>> origin/trunk
     return render_template("auth/login_form.html", form=form)
 
 
@@ -85,7 +69,6 @@ def logout():
     logout_user()
     return redirect(url_for("public.index"))
 
-<<<<<<< HEAD
 
 @auth_bp.route("/verify-2fa", methods=["GET", "POST"])
 def verify_2fa():
@@ -119,7 +102,7 @@ def verify_2fa():
             flash("Invalid code. Try again.", "error")
 
     return render_template("auth/verify_2fa.html")
-=======
+
 @auth_bp.route("/recover", methods=["GET", "POST"])
 def forgot_password_request():
     """
@@ -184,4 +167,3 @@ def reset_token(token):
         title="Establecer Nueva Contraseña", 
         form=form
     )
->>>>>>> origin/trunk

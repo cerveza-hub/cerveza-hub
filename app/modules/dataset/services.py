@@ -8,11 +8,8 @@ from typing import Optional
 from flask import request
 
 from app.modules.auth.services import AuthenticationService
-<<<<<<< HEAD
-from app.modules.dataset.models import DataSet, DSMetaData, DSViewRecord
-=======
+
 from app.modules.dataset.models import DataSet, DSMetaData, DSViewRecord, Community
->>>>>>> origin/trunk
 from app.modules.dataset.repositories import (
     AuthorRepository,
     DataSetRepository,
@@ -20,19 +17,12 @@ from app.modules.dataset.repositories import (
     DSDownloadRecordRepository,
     DSMetaDataRepository,
     DSViewRecordRepository,
-<<<<<<< HEAD
-=======
+
     CommunityRepository,
->>>>>>> origin/trunk
+
 )
 
 from core.services.BaseService import BaseService
-<<<<<<< HEAD
-
-logger = logging.getLogger(__name__)
-
-
-=======
 from werkzeug.utils import secure_filename
 
 logger = logging.getLogger(__name__)
@@ -84,7 +74,6 @@ class CommunityService(BaseService):
         community.datasets = new_datasets 
         self.repository.session.commit()
     
->>>>>>> origin/trunk
 def calculate_checksum_and_size(file_path):
     file_size = os.path.getsize(file_path)
     with open(file_path, "rb") as file:
@@ -123,7 +112,6 @@ class DataSetService(BaseService):
     def count_dsmetadata(self) -> int:
         return self.dsmetadata_repository.count()
 
-<<<<<<< HEAD
     def get_most_downloaded_datasets(self, limit=10):
         """
         Devuelve los datasets más descargados.
@@ -186,8 +174,6 @@ class DataSetService(BaseService):
 
         return [{"id": ds.id, "title": ds.title, "views": ds.views} for ds in ranking]
 
-=======
->>>>>>> origin/trunk
     def total_dataset_downloads(self) -> int:
         return self.dsdownloadrecord_repository.total_dataset_downloads()
 

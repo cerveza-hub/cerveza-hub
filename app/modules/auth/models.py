@@ -1,29 +1,15 @@
-<<<<<<< HEAD
-from datetime import datetime, timezone
 
-from flask_login import UserMixin
-from werkzeug.security import check_password_hash, generate_password_hash
-
-from app import db
-=======
 from datetime import datetime, timezone, timedelta
 
 from flask_login import UserMixin
 from werkzeug.security import check_password_hash, generate_password_hash
 from app import db
 import secrets
->>>>>>> origin/trunk
 
 
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
 
-<<<<<<< HEAD
-    email = db.Column(db.String(256), unique=True, nullable=False)
-    password = db.Column(db.String(256), nullable=False)
-    created_at = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
-
-=======
     role_id = db.Column(db.Integer, db.ForeignKey("roles.id"), nullable=False, default=1)
     
     email = db.Column(db.String(256), unique=True, nullable=False)
@@ -36,7 +22,6 @@ class User(db.Model, UserMixin):
 
     role = db.relationship("Role", backref="users", lazy=True)
     
->>>>>>> origin/trunk
     data_sets = db.relationship("DataSet", backref="user", lazy=True)
     profile = db.relationship("UserProfile", backref="user", uselist=False)
 
@@ -57,11 +42,7 @@ class User(db.Model, UserMixin):
     def temp_folder(self) -> str:
         from app.modules.auth.services import AuthenticationService
 
-        return AuthenticationService().temp_folder_by_user(self)
-<<<<<<< HEAD
-=======
-
-    
+        return AuthenticationService().temp_folder_by_user(self)  
 
     def generate_reset_token(self):
         """
@@ -113,4 +94,3 @@ class Role(db.Model):
 
     def __repr__(self):
         return f'<Role {self.name}>'
->>>>>>> origin/trunk
