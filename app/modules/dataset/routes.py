@@ -1,4 +1,3 @@
-from curses import flash
 import json
 import logging
 import os
@@ -14,6 +13,8 @@ from werkzeug.utils import secure_filename
 from app.modules import dataset
 from flask import (
     abort,
+    current_app, # Asegúrese de que current_app y request estén aquí
+    flash,       # ⬅️ Flash DEBE estar en la importación de Flask
     jsonify,
     make_response,
     redirect,
@@ -23,12 +24,22 @@ from flask import (
     url_for,
 )
 from flask_login import current_user, login_required
+# La línea "from flask import flash, current_app, request" que copió previamente puede eliminarse si ya está todo arriba.
 
 from app.modules.comment.services import CommentService
 from app.modules.dataset import dataset_bp
-from app.modules.dataset.forms import DataSetForm
-from app.modules.dataset.models import DSDownloadRecord
+from app.modules.dataset.forms import DataSetForm, CommunityForm, CommunityDatasetForm
+from app.modules.dataset.models import DSDownloadRecord, DSMetaData, DataSet, DSViewRecord, Author
 
+from app.modules.dataset.services import (
+    AuthorService,
+    DataSetService,
+    DOIMappingService,
+    DSDownloadRecordService,
+    DSMetaDataService,
+    DSViewRecordService,
+    CommunityService,
+)
 
 from app.modules.dataset import dataset_bp
 from app import db
