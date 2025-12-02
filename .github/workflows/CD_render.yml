@@ -1,12 +1,12 @@
 name: Deploy to Render
 
 on:
-<<<<<<< HEAD
   workflow_run:
     # Trigger this workflow only after specified workflows complete
     workflows:
       - Codacy CI
       - Python Lint
+      - Publish image in Docker Hub
     types:
       - completed
     branches:
@@ -16,86 +16,15 @@ jobs:
   deploy:
     name: Deploy to Render
     if: github.event.workflow_run.conclusion == 'success' && github.ref == 'refs/heads/main'
-=======
-  push:
-    branches: [ trunk ]
-  workflow_dispatch:
-
-permissions:
-  contents: read
-
-concurrency:
-  group: render-deploy-${{ github.ref_name }}
-  cancel-in-progress: false
-
-jobs:
-  deploy:
-    name: Deploy to Render (trunk)
->>>>>>> origin/trunk
     runs-on: ubuntu-latest
 
     steps:
       - name: Check out the repo
         uses: actions/checkout@v4
 
-<<<<<<< HEAD
       - name: Deploy to Render
         env:
           FERNET_KEY: ${{ secrets.FERNET_KEY }}
-          deploy_url: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+          deploy_url: ${{ secrets.RENDER_DEPLOY_HOOK_URL_PROD }}
         run: |
           curl "$deploy_url"
-=======
-      - name: Set Render deploy hook (trunk)
-        run: |
-          if [ -z "${{ secrets.RENDER_DEPLOY_HOOK_URL_TRUNK }}" ]; then
-            echo "Falta el secreto RENDER_DEPLOY_HOOK_URL_TRUNK"; exit 1
-          fi
-          echo "DEPLOY_HOOK_URL=${{ secrets.RENDER_DEPLOY_HOOK_URL_TRUNK }}" >> $GITHUB_ENV
-          echo "Target: Render (trunk)"
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-
-      - name: Install dependencies
-        run: |
-          pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install -e .     # instala tu propio proyecto (importante para 'rosemary')
-
-      - name: Reset database 
-        env:
-          MARIADB_DATABASE: ${{ secrets.MARIADB_DATABASE }}
-          MARIADB_HOSTNAME: ${{ secrets.MARIADB_HOSTNAME }}
-          MARIADB_PASSWORD: ${{ secrets.MARIADB_PASSWORD }}
-          MARIADB_PORT: ${{ secrets.MARIADB_PORT }}
-          MARIADB_USER: ${{ secrets.MARIADB_USER }}
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y mariadb-client
-          echo "Dropping and recreating database: $MARIADB_DATABASE"
-          mysql -h "$MARIADB_HOSTNAME" -P "$MARIADB_PORT" -u "$MARIADB_USER" -p"$MARIADB_PASSWORD" \
-            -e "DROP DATABASE IF EXISTS \`$MARIADB_DATABASE\`; CREATE DATABASE \`$MARIADB_DATABASE\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
-
-      - name: Run migrations and seed
-        env:
-          FLASK_APP: app.py
-          FLASK_ENV: production
-          MARIADB_DATABASE: ${{ secrets.MARIADB_DATABASE }}
-          MARIADB_HOSTNAME: ${{ secrets.MARIADB_HOSTNAME }}
-          MARIADB_PASSWORD: ${{ secrets.MARIADB_PASSWORD }}
-          MARIADB_PORT: ${{ secrets.MARIADB_PORT }}
-          MARIADB_USER: ${{ secrets.MARIADB_USER }}
-        run: |
-          flask db upgrade
-          rosemary db:seed
-
-      - name: Trigger Render deploy
-        run: |
-          if [ -z "${DEPLOY_HOOK_URL:-}" ]; then
-            echo "Falta DEPLOY_HOOK_URL"; exit 1
-          fi
-          curl -fsS -X POST "$DEPLOY_HOOK_URL"
->>>>>>> origin/trunk
